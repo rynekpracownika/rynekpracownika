@@ -1,4 +1,7 @@
 "use client";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useState } from "react";
 
 const C = {
@@ -664,8 +667,22 @@ function ReportsPanel() {
 
 /* ── ROOT ────────────────────────────────────────────────────────────────── */
 export default function App() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [active, setActive] = useState("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/admin/login");
+    }
+  }, [status]);
+
+  if (status === "loading" || !session) {
+    return <div style={{ background:"#0F172A", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:16 }}>Ładowanie...</div>;
+  }
+
+
 
   const titles = {
     dashboard:"Dashboard",
