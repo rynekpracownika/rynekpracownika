@@ -136,8 +136,8 @@ function Navbar({ view, setView }) {
         </div>
 
         <div style={{ display:"flex", gap:8, marginLeft:8 }}>
-          <Btn variant="outline" small onClick={()=>setView("login")}>Zaloguj</Btn>
-          <Btn variant="primary" small onClick={()=>setView("addad")}>+ Dodaj ogłoszenie</Btn>
+          <Btn variant="outline" small onClick={()=>window.location.href='/logowanie'}>Zaloguj</Btn>
+          <Btn variant="primary" small onClick={()=>window.location.href='/rejestracja'}>+ Dodaj ogłoszenie</Btn>
         </div>
       </div>
     </nav>
