@@ -147,7 +147,7 @@ function Navbar({ view, setView }) {
 }
 
 /* ── HOME ────────────────────────────────────────────────────────────────── */
-function HomeView({ setView }) {
+function HomeView({ setView, ads: realAds = [] }) {
   const stats = [
     { n:"18 240+", t:"Aktywnych ogłoszeń" },
     { n:"4 800+",  t:"Zweryfikowanych firm" },
@@ -248,7 +248,7 @@ function HomeView({ setView }) {
           <button onClick={()=>setView("ads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie →</button>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
-          {ADS.slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview />)}
+          {(realAds.length > 0 ? realAds : ADS).slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview />)}
         </div>
       </div>
 
@@ -928,7 +928,7 @@ useEffect(() => {
       `}</style>
       <Navbar view={view} setView={setView} />
       <main>
-        {view==="home"       && <HomeView setView={setView} />}
+        {view==="home"       && <HomeView setView={setView} ads={realAds} />}
         {view==="ads"        && <AdsView ads={realAds} />}
         {view==="addad"      && <AddAdView setView={setView} />}
         {view==="ranking"    && <RankingView />}
