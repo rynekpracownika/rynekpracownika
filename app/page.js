@@ -148,12 +148,12 @@ function Navbar({ view, setView }) {
 
 /* ── HOME ────────────────────────────────────────────────────────────────── */
 function HomeView({ setView, ads: realAds = [] }) {
-  const stats = [
-    { n:"18 240+", t:"Aktywnych ogłoszeń" },
-    { n:"4 800+",  t:"Zweryfikowanych firm" },
-    { n:"16 woj.", t:"Zasięg regionalny" },
-    { n:"za darmo",t:"Ogłoszenie pracownika" },
-  ];
+const stats = [
+  { n: realAds.length > 0 ? `${realAds.length}` : "0", t:"Aktywnych ogłoszeń" },
+  { n:"16 woj.", t:"Zasięg regionalny" },
+  { n:"za darmo", t:"Ogłoszenie pracownika" },
+  { n:"100%", t:"Anonimowość danych" },
+];
   return (
     <div>
       {/* HERO */}
