@@ -55,6 +55,10 @@ export default function PanelPracownika() {
 
       const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setProfile(prof);
+      if (prof?.type === "employer") {
+  router.push("/panel/pracodawca");
+  return;
+}
 
       const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       setAds(myAds || []);
