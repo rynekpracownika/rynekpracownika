@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 /* ── TOKENS ─────────────────────────────────────────────────────────────── */
 const C = {
@@ -330,7 +332,7 @@ function AdCard({ ad, preview, onUnlock }) {
 }
 
 /* ── ADS LIST ────────────────────────────────────────────────────────────── */
-function AdsView() {
+function AdsView({ ads: realAds = [] }) {
   const [search,    setSearch]    = useState("");
   const [region,    setRegion]    = useState("Cała Polska");
   const [catFilter, setCatFilter] = useState("all");
@@ -339,7 +341,7 @@ function AdsView() {
   const [unlocked,  setUnlocked]  = useState({});
   const [showUnlock,setShowUnlock]= useState(null);
 
-  const filtered = ADS
+  const filtered = realAds
     .filter(a => {
       const q = search.toLowerCase();
       return (
@@ -899,6 +901,20 @@ function Footer({ setView }) {
 /* ── ROOT APP ─────────────────────────────────────────────────────────────── */
 export default function App() {
   const [view, setView] = useState("home");
+  const [realAds, setRealAds] = useState([]);
+
+useEffect(() => {
+  async function loadAds() {
+    const { data } = await supabase
+      .from("ads")
+      .select("*, profiles(name, phone, email)")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(12);
+    if (data) setRealAds(data);
+  }
+  loadAds();
+}, []);
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'DM Sans',sans-serif" }}>
@@ -913,7 +929,7 @@ export default function App() {
       <Navbar view={view} setView={setView} />
       <main>
         {view==="home"       && <HomeView setView={setView} />}
-        {view==="ads"        && <AdsView />}
+        {view==="ads"        && <AdsView ads={realAds} />}
         {view==="addad"      && <AddAdView setView={setView} />}
         {view==="ranking"    && <RankingView />}
         {view==="howitworks" && <HowItWorksView setView={setView} />}
