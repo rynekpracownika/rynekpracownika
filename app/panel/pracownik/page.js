@@ -60,7 +60,7 @@ export default function PanelPracownika() {
   return;
 }
 
-      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
       setAds(myAds || []);
       setLoading(false);
     }
@@ -87,10 +87,11 @@ export default function PanelPracownika() {
       contract: form.contract,
       remote: form.remote,
       available: form.avail,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     if (!error) {
-      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
       setAds(myAds || []);
       setSaved(true);
       setView("dashboard");
@@ -186,7 +187,10 @@ export default function PanelPracownika() {
                       <div style={{ fontWeight:700, fontSize:14, color:C.g800 }}>{ad.role}</div>
                       <div style={{ fontSize:12, color:C.g400, marginTop:2 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`}</div>
                     </div>
-                    <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
+                    <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                  <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
+                </div>
                   </div>
                 ))}
                 {ads.length > 3 && <button onClick={()=>setView("myads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:600, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie ({ads.length}) →</button>}
@@ -344,6 +348,7 @@ export default function PanelPracownika() {
                         <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`}</div>
                       </div>
                       <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
                     </div>
                     {ad.skills?.length > 0 && (
                       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>

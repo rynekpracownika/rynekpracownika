@@ -276,6 +276,7 @@ function AdCard({ ad, preview, onUnlock }) {
     }}
       onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 28px rgba(26,115,232,0.12)"; e.currentTarget.style.transform="translateY(-2px)";}}
       onMouseLeave={e=>{e.currentTarget.style.boxShadow=ad.premium?"0 4px 20px rgba(245,158,11,0.08)":"0 2px 10px rgba(26,115,232,0.04)"; e.currentTarget.style.transform="";}}
+    onClick={()=>window.location.href=`/ogloszenie/${ad.id}`}
     >
       {ad.premium && (
         <div style={{ position:"absolute", top:0, right:0, background:`linear-gradient(135deg,${C.yellow},${C.orange})`, padding:"3px 12px", borderBottomLeftRadius:10, borderTopRightRadius:12, fontSize:9, fontWeight:800, color:"#fff", letterSpacing:1 }}>★ WYRÓŻNIONE</div>
