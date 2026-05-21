@@ -31,7 +31,7 @@ export default function NotFound() {
             <button onClick={()=>router.push("/")} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"12px 28px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
               🏠 Strona główna
             </button>
-            <button onClick={()=>router.push("/ogloszenia")} style={{ background:C.white, color:C.blue, border:`1.5px solid ${C.blue}`, padding:"12px 28px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+            <button onClick={()=>router.push("/")} style={{ background:C.white, color:C.blue, border:`1.5px solid ${C.blue}`, padding:"12px 28px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
               🔍 Przeglądaj ogłoszenia
             </button>
           </div>
