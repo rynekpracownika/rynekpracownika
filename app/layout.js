@@ -1,6 +1,7 @@
 "use client";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
+import CookieBanner from "./components/CookieBanner";
 
 export default function RootLayout({ children }) {
   return (
@@ -8,6 +9,7 @@ export default function RootLayout({ children }) {
       <body>
         <SessionProvider>
           {children}
+          <CookieBanner />
         </SessionProvider>
       </body>
     </html>
