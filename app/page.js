@@ -378,7 +378,7 @@ function AdsView({ ads: realAds = [] }) {
               Uzyskaj dostęp do pełnego imienia i numeru telefonu osoby: <strong>{showUnlock.role}</strong> z {showUnlock.city}.
             </p>
             <div style={{ background:C.g50, borderRadius:10, padding:14, marginBottom:20, border:`1px solid ${C.g100}` }}>
-              {[["Pojedyncze odblokowanie","9 zł brutto"],["Pakiet 10 odblokowań","69 zł brutto"],["Abonament miesięczny","199 zł / mc — bez limitu"]].map(([t,p])=>(
+              {[["Pojedyncze odblokowanie","9 zł brutto"],["Pakiet 10 odblokowań","79 zł brutto"]].map(([t,p])=>(
                 <div key={t} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.g100}`, fontSize:13 }}>
                   <span style={{ color:C.g800 }}>{t}</span>
                   <span style={{ fontWeight:700, color:C.blue }}>{p}</span>
@@ -886,7 +886,13 @@ function Footer({ setView }) {
           ].map(col=>(
             <div key={col.title}>
               <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, color:"#fff", fontSize:11, marginBottom:12, textTransform:"uppercase", letterSpacing:1.2 }}>{col.title}</div>
-              {col.links.map(l=><div key={l} style={{ fontSize:12, marginBottom:7, cursor:"pointer" }}>{l}</div>)}
+              {col.links.map(l=>(
+  <div key={l} onClick={()=>{
+    if(l==="Regulamin") window.location.href="/regulamin";
+    else if(l==="RODO") window.location.href="/polityka-prywatnosci";
+    else if(l==="Polityka prywatności") window.location.href="/polityka-prywatnosci";
+  }} style={{ fontSize:12, marginBottom:7, cursor:"pointer" }}>{l}</div>
+))}
             </div>
           ))}
         </div>
