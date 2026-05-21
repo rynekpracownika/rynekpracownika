@@ -15,74 +15,106 @@ export default function Logowanie() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [view, setView] = useState("login"); // login | reset | resetSent
   const router = useRouter();
 
   async function handleLogin() {
-    if (!email || !password) {
-      setError("Wypełnij wszystkie pola!"); return;
-    }
-    setLoading(true);
-    setError("");
-
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError("Nieprawidłowy email lub hasło");
-      setLoading(false);
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("type")
-      .eq("id", data.user.id)
-      .single();
-
+    if (!email || !password) { setError("Wypełnij wszystkie pola!"); return; }
+    setLoading(true); setError("");
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError) { setError("Nieprawidłowy email lub hasło"); setLoading(false); return; }
+    const { data: profile } = await supabase.from("profiles").select("type").eq("id", data.user.id).single();
     setLoading(false);
+    if (profile?.type === "worker") router.push("/panel/pracownik");
+    else router.push("/panel/pracodawca");
+  }
 
-    if (profile?.type === "worker") {
-      router.push("/panel/pracownik");
-    } else {
-      router.push("/panel/pracodawca");
-    }
+  async function handleReset() {
+    if (!email) { setError("Podaj adres email!"); return; }
+    setLoading(true); setError("");
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://rynekpracownika.pl/nowe-haslo",
+    });
+    setLoading(false);
+    if (resetError) { setError("Błąd — sprawdź czy email jest poprawny"); return; }
+    setView("resetSent");
   }
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ background:C.white, borderRadius:16, padding:40, maxWidth:420, width:"100%", boxShadow:"0 4px 20px rgba(0,0,0,0.08)" }}>
-        <div style={{ textAlign:"center", marginBottom:32 }}>
-          <div style={{ width:48, height:48, borderRadius:12, background:`linear-gradient(135deg,${C.blue},${C.navy})`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:22 }}>🔑</div>
-          <h1 style={{ fontFamily:"Sora,sans-serif", fontSize:24, fontWeight:800, color:C.g800, marginBottom:6 }}>Zaloguj się</h1>
-          <p style={{ fontSize:13, color:C.g600 }}>rynekpracownika.pl</p>
-        </div>
 
-        {error && (
-          <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.red }}>{error}</div>
+        {/* LOGIN */}
+        {view === "login" && (
+          <>
+            <div style={{ textAlign:"center", marginBottom:32 }}>
+              <div style={{ width:48, height:48, borderRadius:12, background:`linear-gradient(135deg,${C.blue},${C.navy})`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", fontSize:22 }}>🔑</div>
+              <h1 style={{ fontFamily:"Sora,sans-serif", fontSize:24, fontWeight:800, color:C.g800, marginBottom:6 }}>Zaloguj się</h1>
+              <p style={{ fontSize:13, color:C.g600 }}>rynekpracownika.pl</p>
+            </div>
+            {error && <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.red }}>{error}</div>}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Email</label>
+              <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="jan@example.pl" type="email"
+                style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
+            </div>
+            <div style={{ marginBottom:8 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Hasło</label>
+              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" type="password"
+                onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+                style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
+            </div>
+            <div style={{ textAlign:"right", marginBottom:20 }}>
+              <span onClick={()=>{ setView("reset"); setError(""); }} style={{ fontSize:12, color:C.blue, cursor:"pointer", fontWeight:600 }}>
+                Zapomniałem hasła
+              </span>
+            </div>
+            <button onClick={handleLogin} disabled={loading} style={{ width:"100%", background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"Sora,sans-serif" }}>
+              {loading ? "Logowanie..." : "Zaloguj się →"}
+            </button>
+            <p style={{ textAlign:"center", marginTop:16, fontSize:13, color:C.g600 }}>
+              Nie masz konta? <a href="/rejestracja" style={{ color:C.blue, fontWeight:600 }}>Zarejestruj się</a>
+            </p>
+          </>
         )}
 
-        <div style={{ marginBottom:14 }}>
-          <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Email</label>
-          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="jan@example.pl" type="email"
-            style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
-        </div>
+        {/* RESET */}
+        {view === "reset" && (
+          <>
+            <div style={{ textAlign:"center", marginBottom:32 }}>
+              <div style={{ fontSize:40, marginBottom:12 }}>🔐</div>
+              <h1 style={{ fontFamily:"Sora,sans-serif", fontSize:22, fontWeight:800, color:C.g800, marginBottom:6 }}>Resetuj hasło</h1>
+              <p style={{ fontSize:13, color:C.g600 }}>Wyślemy Ci link do ustawienia nowego hasła.</p>
+            </div>
+            {error && <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.red }}>{error}</div>}
+            <div style={{ marginBottom:24 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Email</label>
+              <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="jan@example.pl" type="email"
+                style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
+            </div>
+            <button onClick={handleReset} disabled={loading} style={{ width:"100%", background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+              {loading ? "Wysyłanie..." : "Wyślij link resetujący →"}
+            </button>
+            <p style={{ textAlign:"center", marginTop:16, fontSize:13, color:C.g600 }}>
+              <span onClick={()=>{ setView("login"); setError(""); }} style={{ color:C.blue, cursor:"pointer", fontWeight:600 }}>← Wróć do logowania</span>
+            </p>
+          </>
+        )}
 
-        <div style={{ marginBottom:24 }}>
-          <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Hasło</label>
-          <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" type="password"
-            onKeyDown={e=>e.key==="Enter"&&handleLogin()}
-            style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
-        </div>
+        {/* RESET SENT */}
+        {view === "resetSent" && (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:56, marginBottom:16 }}>📧</div>
+            <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:22, fontWeight:800, color:C.g800, marginBottom:8 }}>Sprawdź email!</h2>
+            <p style={{ fontSize:14, color:C.g600, lineHeight:1.7, marginBottom:24 }}>
+              Wysłaliśmy link do resetowania hasła na adres <strong>{email}</strong>. Sprawdź również folder spam.
+            </p>
+            <button onClick={()=>{ setView("login"); setError(""); }} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px 28px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+              Wróć do logowania
+            </button>
+          </div>
+        )}
 
-        <button onClick={handleLogin} disabled={loading} style={{ width:"100%", background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"Sora,sans-serif" }}>
-          {loading ? "Logowanie..." : "Zaloguj się →"}
-        </button>
-
-        <p style={{ textAlign:"center", marginTop:16, fontSize:13, color:C.g600 }}>
-          Nie masz konta? <a href="/rejestracja" style={{ color:C.blue, fontWeight:600 }}>Zarejestruj się</a>
-        </p>
       </div>
     </div>
   );
