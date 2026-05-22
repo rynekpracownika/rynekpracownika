@@ -147,7 +147,7 @@ function Navbar({ view, setView }) {
 }
 
 /* ── HOME ────────────────────────────────────────────────────────────────── */
-function HomeView({ setView, ads: realAds = [] }) {
+function HomeView({ setView, setActiveCat, ads: realAds = [] }) {
 const stats = [
   { n: realAds.length > 0 ? `${realAds.length}` : "0", t:"Aktywnych ogłoszeń" },
   { n:"16 woj.", t:"Zasięg regionalny" },
@@ -204,7 +204,7 @@ const stats = [
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
           {CATEGORIES.map(cat=>(
-            <div key={cat.id} onClick={()=>setView("ads")} style={{
+            <div key={cat.id} onClick={()=>{ setActiveCat(cat.id); setView("ads"); }} style={{
               background:C.white, borderRadius:14, padding:"20px 18px", cursor:"pointer",
               border:`1.5px solid ${C.g100}`, transition:"all 0.18s",
               boxShadow:"0 2px 8px rgba(26,115,232,0.04)",
@@ -333,10 +333,10 @@ function AdCard({ ad, preview, onUnlock }) {
 }
 
 /* ── ADS LIST ────────────────────────────────────────────────────────────── */
-function AdsView({ ads: realAds = [] }) {
+function AdsView({ ads: realAds = [], initialCat = "all" }) {
   const [search,    setSearch]    = useState("");
   const [region,    setRegion]    = useState("Cała Polska");
-  const [catFilter, setCatFilter] = useState("all");
+  const [catFilter, setCatFilter] = useState(initialCat);
   const [sortBy,    setSortBy]    = useState("newest");
   const [remoteOnly,setRemoteOnly]= useState(false);
   const [unlocked,  setUnlocked]  = useState({});
@@ -348,7 +348,7 @@ function AdsView({ ads: realAds = [] }) {
       return (
         (!search || a.role.toLowerCase().includes(q) || a.skills.some(s=>s.toLowerCase().includes(q)) || a.city.toLowerCase().includes(q)) &&
         (region==="Cała Polska" || a.region===region) &&
-        (catFilter==="all" || a.cat===catFilter) &&
+        (catFilter==="all" || a.cat===catFilter || a.category===catFilter) &&
         (!remoteOnly || a.remote)
       );
     })
@@ -909,6 +909,7 @@ function Footer({ setView }) {
 export default function App() {
   const [view, setView] = useState("home");
   const [realAds, setRealAds] = useState([]);
+  const [activeCat, setActiveCat] = useState("all");
 
 useEffect(() => {
   async function loadAds() {
@@ -935,8 +936,8 @@ useEffect(() => {
       `}</style>
       <Navbar view={view} setView={setView} />
       <main>
-        {view==="home"       && <HomeView setView={setView} ads={realAds} />}
-        {view==="ads"        && <AdsView ads={realAds} />}
+        {view==="home"       && <HomeView setView={setView} setActiveCat={setActiveCat} ads={realAds} />}
+        {view==="ads"        && <AdsView ads={realAds} initialCat={activeCat} />}
         {view==="addad"      && <AddAdView setView={setView} />}
         {view==="ranking"    && <RankingView />}
         {view==="howitworks" && <HowItWorksView setView={setView} />}
