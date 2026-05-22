@@ -52,6 +52,17 @@ export default function Rejestracja() {
       });
     }
 
+    // Wyślij email powitalny
+    await fetch("/api/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: type === "worker" ? "welcome_worker" : "welcome_employer",
+        to: form.email,
+        data: { name: form.name.split(" ")[0] },
+      }),
+    });
+
     setLoading(false);
     setDone(true);
   }
