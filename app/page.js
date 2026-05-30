@@ -153,9 +153,9 @@ function Navbar({ view, setView }) {
   );
 }
 
-function HomeView({ setView, setActiveCat, ads: realAds=[] }) {
+function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0 }) {
   const stats = [
-    { n:realAds.length>0?`${realAds.length}`:"0", t:"Aktywnych ogłoszeń" },
+    { n:adsCount>0?`${adsCount}`:"0", t:"Aktywnych ogłoszeń" },
     { n:"16 woj.", t:"Zasięg regionalny" },
     { n:"za darmo", t:"Ogłoszenie pracownika" },
     { n:"100%", t:"Anonimowość danych" },
@@ -346,16 +346,16 @@ function AdsView({ ads: realAds=[], initialCat="all" }) {
 
       <div style={{ background:C.white, borderRadius:14, padding:"16px 20px", border:`1px solid ${C.g100}`, marginBottom:20, boxShadow:"0 2px 10px rgba(26,115,232,0.05)" }}>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <input placeholder="🔍  Zawód, umiejętność, miasto..." value={search} onChange={e=>setSearch(e.target.value)} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
+          <input placeholder="🔍  Zawód, umiejętność, miasto..." value={search} onChange={e=>setSearch(e.target.value)} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:"#1E293B" }} />
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-            <select value={region} onChange={e=>setRegion(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }}>
+            <select value={region} onChange={e=>setRegion(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }}>
               {REGIONS.map(r=><option key={r}>{r}</option>)}
             </select>
-            <select value={catFilter} onChange={e=>setCatFilter(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }}>
+            <select value={catFilter} onChange={e=>setCatFilter(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }}>
               <option value="all">Wszystkie branże</option>
               {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </select>
-            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ flex:1, minWidth:120, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }}>
+            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ flex:1, minWidth:120, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }}>
               <option value="newest">Najnowsze</option>
               <option value="offers">Najpopularniejsze</option>
               <option value="premium">Wyróżnione</option>
@@ -734,13 +734,18 @@ export default function App() {
   const [realAds, setRealAds] = useState([]);
   const [activeCat, setActiveCat] = useState("all");
 
-  useEffect(() => {
-    async function loadAds() {
-      const { data } = await supabase.from("ads").select("*, profiles(name, phone, email)").eq("status","active").order("created_at",{ ascending:false }).limit(12);
-      if(data) setRealAds(data);
-    }
-    loadAds();
-  }, []);
+  const [adsCount, setAdsCount] = useState(0);
+
+useEffect(() => {
+  async function loadAds() {
+    const { data } = await supabase.from("ads").select("*, profiles(name, phone, email)").eq("status","active").order("created_at",{ ascending:false }).limit(12);
+    if(data) setRealAds(data);
+
+    const { count } = await supabase.from("ads").select("*", { count:"exact", head:true }).eq("status","active");
+    if(count) setAdsCount(count);
+  }
+  loadAds();
+}, []);
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'DM Sans',sans-serif" }}>
@@ -774,7 +779,7 @@ export default function App() {
       `}</style>
       <Navbar view={view} setView={setView} />
       <main>
-        {view==="home"       && <HomeView setView={setView} setActiveCat={setActiveCat} ads={realAds} />}
+        {view==="home" && <HomeView setView={setView} setActiveCat={setActiveCat} ads={realAds} adsCount={adsCount} />}
         {view==="ads"        && <AdsView ads={realAds} initialCat={activeCat} />}
         {view==="addad"      && <AddAdView setView={setView} />}
         {view==="ranking"    && <RankingView />}
