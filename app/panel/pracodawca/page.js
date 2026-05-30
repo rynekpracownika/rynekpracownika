@@ -246,10 +246,24 @@ export default function PanelPracodawcy() {
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
                 {ads.filter(a=>unlocked[a.id]).map(ad=>(
-                  <div key={ad.id} style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}` }}>
-                    <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:15, color:C.g800, marginBottom:4 }}>{ad.role}</div>
-                    <div style={{ fontSize:12, color:C.g400, marginBottom:12 }}>{ad.city}, {ad.region}</div>
+                  <div key={ad.id} style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, paddingBottom:12, borderBottom:`1px solid ${C.g100}` }}>
+                      <div>
+                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:15, color:C.g800, marginBottom:3 }}>{ad.role}</div>
+                        <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region}</div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h</div>
+                        <div style={{ fontSize:11, color:C.g400 }}>{ad.experience} dośw.</div>
+                      </div>
+                    </div>
+                    {ad.skills?.length > 0 && (
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
+                        {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
+                      </div>
+                    )}
                     <div style={{ background:C.green+"0a", borderRadius:8, padding:"12px 14px", border:`1px solid ${C.green}30` }}>
+                      <div style={{ fontSize:11, fontWeight:700, color:C.green, marginBottom:8 }}>✅ Dane kontaktowe</div>
                       <div style={{ fontSize:14, fontWeight:700, color:C.g800 }}>{ad.profiles?.name}</div>
                       <div style={{ fontSize:13, color:C.blue, fontWeight:600 }}>☎ {ad.profiles?.phone}</div>
                       <div style={{ fontSize:12, color:C.g600 }}>✉ {ad.profiles?.email}</div>
