@@ -7,6 +7,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pl" translate="no">
       <head>
+        <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#1A73E8" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
