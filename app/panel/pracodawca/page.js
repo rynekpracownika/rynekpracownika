@@ -49,9 +49,9 @@ export default function PanelPracodawcy() {
       const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setProfile(prof);
       if (prof?.type === "worker") {
-  router.push("/panel/pracownik");
-  return;
-}
+        router.push("/panel/pracownik");
+        return;
+      }
 
       const { data: allAds } = await supabase.from("ads").select("*, profiles(name, phone, email)").eq("status","active").order("created_at", { ascending: false });
       setAds(allAds || []);
@@ -89,6 +89,9 @@ export default function PanelPracodawcy() {
     </div>
   );
 
+  const inputStyle = { padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:C.g800 };
+  const selectStyle = { padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", cursor:"pointer", color:C.g800 };
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
@@ -103,8 +106,8 @@ export default function PanelPracodawcy() {
             <p style={{ fontSize:13, color:C.g600, textAlign:"center", marginBottom:22, lineHeight:1.6 }}>
               Uzyskaj dostęp do danych: <strong>{showUnlock.role}</strong> z {showUnlock.city}.
             </p>
-            <div style={{ background:C.g50, borderRadius:10, padding:14, marginBottom:18, border:`1px solid ${C.g100}` }}>
-              {[["Pojedyncze odblokowanie","9 zł"],["Pakiet 10 kontaktów","69 zł"],["Abonament miesięczny","199 zł / mc"]].map(([t,p])=>(
+            <div style={{ background:C.bg, borderRadius:10, padding:14, marginBottom:18, border:`1px solid ${C.g100}` }}>
+              {[["Pojedyncze odblokowanie","9 zł"],["Pakiet 10 kontaktów","79 zł"]].map(([t,p])=>(
                 <div key={t} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:`1px solid ${C.g100}`, fontSize:13 }}>
                   <span style={{ color:C.g800 }}>{t}</span>
                   <span style={{ fontWeight:700, color:C.blue }}>{p}</span>
@@ -143,14 +146,16 @@ export default function PanelPracodawcy() {
           <div>
             <div style={{ background:C.white, borderRadius:14, padding:"16px 20px", border:`1px solid ${C.g100}`, marginBottom:20, boxShadow:"0 2px 10px rgba(26,115,232,0.05)" }}>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 180px 180px", gap:10, marginBottom:12 }}>
-                <input placeholder="🔍 Zawód, umiejętność, miasto..." value={search} onChange={e=>setSearch(e.target.value)}
-                  style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
-                <select value={region} onChange={e=>setRegion(e.target.value)}
-                  style={{ padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", cursor:"pointer" }}>
+                <input
+                  placeholder="🔍 Zawód, umiejętność, miasto..."
+                  value={search}
+                  onChange={e=>setSearch(e.target.value)}
+                  style={inputStyle}
+                />
+                <select value={region} onChange={e=>setRegion(e.target.value)} style={selectStyle}>
                   {REGIONS.map(r=><option key={r}>{r}</option>)}
                 </select>
-                <select value={cat} onChange={e=>setCat(e.target.value)}
-                  style={{ padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", cursor:"pointer" }}>
+                <select value={cat} onChange={e=>setCat(e.target.value)} style={selectStyle}>
                   {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
               </div>
@@ -190,7 +195,6 @@ export default function PanelPracodawcy() {
                       <p style={{ fontSize:13, color:C.g600, lineHeight:1.6, marginBottom:12 }}>{ad.description}</p>
                     )}
 
-                    {/* Contact info */}
                     {unlocked[ad.id] ? (
                       <div style={{ background:C.green+"0a", borderRadius:10, padding:"14px 16px", border:`1px solid ${C.green}30` }}>
                         <div style={{ fontSize:11, fontWeight:700, color:C.green, marginBottom:8 }}>✅ Dane kontaktowe odblokowane</div>
@@ -199,7 +203,7 @@ export default function PanelPracodawcy() {
                         <div style={{ fontSize:12, color:C.g600 }}>✉ {ad.profiles?.email}</div>
                       </div>
                     ) : (
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.g50, borderRadius:10, padding:"12px 16px", border:`1px dashed ${C.g200}` }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.bg, borderRadius:10, padding:"12px 16px", border:`1px dashed ${C.g200}` }}>
                         <div style={{ fontSize:12, color:C.g400 }}>
                           🔒 <span style={{ fontFamily:"monospace", letterSpacing:2, color:C.g200 }}>Jan K***** · +48 5** *** ***</span>
                         </div>
