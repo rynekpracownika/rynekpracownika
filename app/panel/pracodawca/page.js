@@ -81,6 +81,7 @@ export default function PanelPracodawcy() {
   function confirmUnlock(ad) {
     setUnlocked(u => ({...u, [ad.id]: true}));
     setShowUnlock(null);
+    setView("contacts");
   }
 
   if (loading) return (
