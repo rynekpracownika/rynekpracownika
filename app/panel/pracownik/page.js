@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
+import CityAutocomplete from "@/app/components/CityAutocomplete";
 
 const C = {
   blue:"#1A73E8", navy:"#0D47A1", bg:"#F5F7FA",
@@ -303,7 +304,7 @@ export default function PanelPracownika() {
                   </div>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Miasto</label>
-                    <input placeholder="np. Katowice" value={form.city} onChange={e=>up("city",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
+                    <CityAutocomplete value={form.city} onChange={v=>up("city",v)} region={form.region} />
                   </div>
                 </div>
                 <div style={{ marginBottom:14 }}>
