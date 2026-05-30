@@ -30,11 +30,11 @@ export default function PanelPracownika() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [ads, setAds] = useState([]);
+  const [unlocks, setUnlocks] = useState([]);
   const [view, setView] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Form state
   const [form, setForm] = useState({
     cat:"", role:"", exp:"", rateFrom:"", rateTo:"",
     region:"", city:"", avail:"", contract:[], remote:false,
@@ -56,12 +56,20 @@ export default function PanelPracownika() {
       const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setProfile(prof);
       if (prof?.type === "employer") {
-  router.push("/panel/pracodawca");
-  return;
-}
+        router.push("/panel/pracodawca");
+        return;
+      }
 
       const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
       setAds(myAds || []);
+
+      // Pobierz odblokowania z danymi pracodawcy
+      const { data: unlocksData } = await supabase
+  .from("unlocks")
+  .select("ad_id, created_at, employer_id, profiles!unlocks_employer_id_fkey(name, email)")
+  .order("created_at", { ascending: false });
+      setUnlocks(unlocksData || []);
+
       setLoading(false);
     }
     load();
@@ -118,6 +126,8 @@ export default function PanelPracownika() {
     </div>
   );
 
+  const totalUnlocks = unlocks.length;
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
@@ -136,7 +146,7 @@ export default function PanelPracownika() {
 
         {/* TABS */}
         <div style={{ display:"flex", gap:8, marginBottom:28 }}>
-          {[["dashboard","📊 Dashboard"],["addad","➕ Dodaj ogłoszenie"],["myads","📋 Moje ogłoszenia"]].map(([id,label])=>(
+          {[["dashboard","📊 Dashboard"],["addad","➕ Dodaj ogłoszenie"],["myads","📋 Moje ogłoszenia"],["stats","📈 Statystyki"]].map(([id,label])=>(
             <button key={id} onClick={()=>{setView(id);setSaved(false);}} style={{
               padding:"9px 18px", borderRadius:10, border:`1.5px solid ${view===id?C.blue:C.g200}`,
               background:view===id?C.blue:C.white, color:view===id?"#fff":C.g600,
@@ -158,9 +168,9 @@ export default function PanelPracownika() {
 
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:28 }}>
               {[
-                { icon:"📋", label:"Aktywne ogłoszenia", value: ads.filter(a=>a.status==="active").length },
+                { icon:"📋", label:"Aktywne ogłoszenia", value: ads.length },
+                { icon:"🔓", label:"Firmy odblokował", value: totalUnlocks },
                 { icon:"👁️", label:"Łącznie ogłoszeń", value: ads.length },
-                { icon:"⭐", label:"Premium", value: ads.filter(a=>a.premium).length },
               ].map((s,i)=>(
                 <div key={i} style={{ background:C.white, borderRadius:14, padding:"20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
                   <div style={{ fontSize:24, marginBottom:8 }}>{s.icon}</div>
@@ -188,9 +198,9 @@ export default function PanelPracownika() {
                       <div style={{ fontSize:12, color:C.g400, marginTop:2 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`}</div>
                     </div>
                     <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
-                </div>
+                      <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:C.blue, background:C.blue+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
+                    </div>
                   </div>
                 ))}
                 {ads.length > 3 && <button onClick={()=>setView("myads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:600, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie ({ads.length}) →</button>}
@@ -205,7 +215,6 @@ export default function PanelPracownika() {
             <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:6 }}>Dodaj ogłoszenie</h2>
             <p style={{ fontSize:13, color:C.g600, marginBottom:28 }}>Twoje dane kontaktowe są ukryte — firmy zobaczą je dopiero po wykupieniu dostępu.</p>
 
-            {/* Steps */}
             <div style={{ display:"flex", gap:0, marginBottom:32 }}>
               {["Branża","Szczegóły","Warunki"].map((s,i)=>(
                 <div key={s} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
@@ -217,7 +226,6 @@ export default function PanelPracownika() {
               ))}
             </div>
 
-            {/* Step 1 */}
             {formStep===1 && (
               <div>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10, marginBottom:20 }}>
@@ -231,7 +239,7 @@ export default function PanelPracownika() {
                 {selCat && (
                   <div style={{ marginBottom:20 }}>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:6, textTransform:"uppercase", letterSpacing:0.5 }}>Stanowisko</label>
-                    <select value={form.role} onChange={e=>up("role",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }}>
+                    <select value={form.role} onChange={e=>up("role",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:C.g800 }}>
                       <option value="">-- wybierz --</option>
                       {selCat.sub.map(s=><option key={s}>{s}</option>)}
                       <option value="Inne">Inne</option>
@@ -242,40 +250,39 @@ export default function PanelPracownika() {
               </div>
             )}
 
-            {/* Step 2 */}
             {formStep===2 && (
               <div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Doświadczenie</label>
-                    <select value={form.exp} onChange={e=>up("exp",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }}>
+                    <select value={form.exp} onChange={e=>up("exp",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }}>
                       <option value="">-- wybierz --</option>
                       {["Brak","do 1 roku","1–3 lata","3–5 lat","5–10 lat","ponad 10 lat"].map(e=><option key={e}>{e}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Dostępność</label>
-                    <select value={form.avail} onChange={e=>up("avail",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }}>
+                    <select value={form.avail} onChange={e=>up("avail",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }}>
                       <option value="">-- wybierz --</option>
                       {["Od zaraz","Za 1 tydzień","Za 2 tygodnie","Za 1 miesiąc"].map(e=><option key={e}>{e}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Stawka od (zł/h)</label>
-                    <input type="number" placeholder="np. 30" value={form.rateFrom} onChange={e=>up("rateFrom",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }} />
+                    <input type="number" placeholder="np. 30" value={form.rateFrom} onChange={e=>up("rateFrom",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
                   </div>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Stawka do (zł/h)</label>
-                    <input type="number" placeholder="np. 50" value={form.rateTo} onChange={e=>up("rateTo",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }} />
+                    <input type="number" placeholder="np. 50" value={form.rateTo} onChange={e=>up("rateTo",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
                   </div>
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Umiejętności (oddziel przecinkiem)</label>
-                  <input placeholder="np. Uprawnienia SEP, Pomiary, Instalacje" value={form.skills} onChange={e=>up("skills",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }} />
+                  <input placeholder="np. Uprawnienia SEP, Pomiary, Instalacje" value={form.skills} onChange={e=>up("skills",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
                 </div>
                 <div style={{ marginBottom:20 }}>
                   <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Opis (opcjonalnie)</label>
-                  <textarea rows={3} placeholder="Krótko o sobie..." value={form.desc} onChange={e=>up("desc",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", resize:"none", lineHeight:1.6 }} />
+                  <textarea rows={3} placeholder="Krótko o sobie..." value={form.desc} onChange={e=>up("desc",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", resize:"none", lineHeight:1.6, color:C.g800 }} />
                 </div>
                 <div style={{ display:"flex", gap:10 }}>
                   <button onClick={()=>setFormStep(1)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
@@ -284,31 +291,30 @@ export default function PanelPracownika() {
               </div>
             )}
 
-            {/* Step 3 */}
             {formStep===3 && (
               <div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Województwo</label>
-                    <select value={form.region} onChange={e=>up("region",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }}>
+                    <select value={form.region} onChange={e=>up("region",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }}>
                       <option value="">-- wybierz --</option>
                       {REGIONS.map(r=><option key={r}>{r}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Miasto</label>
-                    <input placeholder="np. Katowice" value={form.city} onChange={e=>up("city",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }} />
+                    <input placeholder="np. Katowice" value={form.city} onChange={e=>up("city",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
                   </div>
                 </div>
                 <div style={{ marginBottom:14 }}>
                   <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:8, textTransform:"uppercase", letterSpacing:0.5 }}>Rodzaj umowy</label>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                     {["UoP","Zlecenie","B2B","Dzieło","Dowolna"].map(c=>(
-                      <label key={c} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", fontSize:13, fontWeight:500, padding:"7px 14px", borderRadius:8, border:`1.5px solid ${form.contract.includes(c)?C.blue:C.g200}`, background:form.contract.includes(c)?C.blue+"0a":C.bg }}>
-                        <input type="checkbox" checked={form.contract.includes(c)} onChange={e=>{ const nc=e.target.checked?[...form.contract,c]:form.contract.filter(x=>x!==c); up("contract",nc); }} style={{ accentColor:C.blue }} />
-                        {c}
-                      </label>
-                    ))}
+  <label key={c} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", fontSize:13, fontWeight:500, padding:"7px 14px", borderRadius:8, border:`1.5px solid ${form.contract.includes(c)?C.blue:C.g200}`, background:form.contract.includes(c)?C.blue+"0a":C.bg, color:C.g800 }}>
+    <input type="checkbox" checked={form.contract.includes(c)} onChange={e=>{ const nc=e.target.checked?[...form.contract,c]:form.contract.filter(x=>x!==c); up("contract",nc); }} style={{ accentColor:C.blue, width:15, height:15 }} />
+    {c}
+  </label>
+))}
                   </div>
                 </div>
                 <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:13, fontWeight:500, marginBottom:24 }}>
@@ -347,12 +353,25 @@ export default function PanelPracownika() {
                         <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:15, color:C.g800, marginBottom:2 }}>{ad.role}</div>
                         <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`}</div>
                       </div>
-                      <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
-                      <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
+                      <div style={{ display:"flex", gap:6 }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
+                        <span style={{ fontSize:11, fontWeight:700, color:C.blue, background:C.blue+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
+                      </div>
                     </div>
                     {ad.skills?.length > 0 && (
                       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
                         {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
+                      </div>
+                    )}
+                    {/* Kto odblokował */}
+                    {unlocks.filter(u=>u.ad_id===ad.id).length > 0 && (
+                      <div style={{ background:C.blue+"08", borderRadius:8, padding:"10px 14px", marginBottom:12, border:`1px solid ${C.blue}20` }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:C.blue, marginBottom:6 }}>🔓 Firmy które odblokowały Twój kontakt:</div>
+                        {unlocks.filter(u=>u.ad_id===ad.id).map((u,i)=>(
+                          <div key={i} style={{ fontSize:12, color:C.g600, marginBottom:3 }}>
+                            • {u.profiles?.name || "Firma"} · {new Date(u.created_at).toLocaleDateString("pl-PL")}
+                          </div>
+                        ))}
                       </div>
                     )}
                     <div style={{ display:"flex", gap:8 }}>
@@ -364,6 +383,41 @@ export default function PanelPracownika() {
             )}
           </div>
         )}
+
+        {/* STATS */}
+        {view==="stats" && (
+          <div>
+            <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:20 }}>📈 Statystyki</h2>
+            {unlocks.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"60px 20px", color:C.g400 }}>
+                <div style={{ fontSize:48, marginBottom:16 }}>📊</div>
+                <div style={{ fontSize:15, fontWeight:600, color:C.g600, marginBottom:8 }}>Brak danych</div>
+                <div style={{ fontSize:13 }}>Żadna firma nie odblokowała jeszcze Twojego kontaktu.</div>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                {unlocks.map((u,i)=>(
+                  <div key={i} style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div>
+                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:14, color:C.g800, marginBottom:3 }}>
+                          🏢 {u.profiles?.name || "Firma"}
+                        </div>
+                        <div style={{ fontSize:12, color:C.g400 }}>
+                          Ogłoszenie: {ads.find(a=>a.id===u.ad_id)?.role || "—"}
+                        </div>
+                      </div>
+                      <div style={{ fontSize:12, color:C.g400 }}>
+                        {new Date(u.created_at).toLocaleDateString("pl-PL")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
