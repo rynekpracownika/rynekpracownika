@@ -655,7 +655,13 @@ function Footer({ setView }) {
             <div key={col.title}>
               <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, color:"#fff", fontSize:11, marginBottom:12, textTransform:"uppercase", letterSpacing:1.2 }}>{col.title}</div>
               {col.links.map(l=>(
-                <div key={l} onClick={()=>{ if(l==="Regulamin") window.location.href="/regulamin"; else if(l==="RODO") window.location.href="/polityka-prywatnosci"; else if(l==="Kontakt") window.location.href="/kontakt";}} style={{ fontSize:12, marginBottom:7, cursor:"pointer" }}>{l}</div>
+                <div key={l} onClick={()=>{ 
+               if(l==="Regulamin") window.location.href="/regulamin"; 
+               else if(l==="RODO") window.location.href="/polityka-prywatnosci";
+               else if(l==="Kontakt") window.location.href="/kontakt";
+               else if(l==="Cennik") window.location.href="/dla-pracodawcy";
+               else if(l==="Szukaj pracowników") window.location.href="/dla-pracodawcy";
+              }} style={{ fontSize:12, marginBottom:7, cursor:"pointer" }}>{l}</div>
               ))}
             </div>
           ))}
