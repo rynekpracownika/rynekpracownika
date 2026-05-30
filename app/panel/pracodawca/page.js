@@ -55,6 +55,14 @@ export default function PanelPracodawcy() {
 
       const { data: allAds } = await supabase.from("ads").select("*, profiles(name, phone, email)").eq("status","active").order("created_at", { ascending: false });
       setAds(allAds || []);
+
+      const { data: unlocksData } = await supabase.from("unlocks").select("ad_id").eq("employer_id", user.id);
+      if (unlocksData) {
+        const map = {};
+        unlocksData.forEach(u => { map[u.ad_id] = true; });
+        setUnlocked(map);
+      }
+
       setLoading(false);
     }
     load();
@@ -78,11 +86,17 @@ export default function PanelPracodawcy() {
     setShowUnlock(ad);
   }
 
-  function confirmUnlock(ad) {
-    setUnlocked(u => ({...u, [ad.id]: true}));
-    setShowUnlock(null);
-    setView("contacts");
-  }
+  async function confirmUnlock(ad) {
+  const { error } = await supabase.from("unlocks").upsert({
+    employer_id: user.id,
+    ad_id: ad.id,
+  }, { onConflict: "employer_id,ad_id" });
+  
+  console.log("unlock error:", error);
+  setUnlocked(u => ({...u, [ad.id]: true}));
+  setShowUnlock(null);
+  setView("contacts");
+}
 
   if (loading) return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
