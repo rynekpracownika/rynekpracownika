@@ -14,7 +14,14 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="RynekPracy" />
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-
+{/* Google Analytics */}
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V1K03LG7Z9"></script>
+<script dangerouslySetInnerHTML={{ __html: `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-V1K03LG7Z9');
+`}} />
         {/* SEO */}
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
