@@ -27,6 +27,21 @@ const REGIONS = [
   "Pomorskie","Śląskie","Świętokrzyskie","Warmińsko-Mazurskie","Wielkopolskie","Zachodniopomorskie",
 ];
 
+function AdStatusBadge({ expiresAt }) {
+  const daysLeft = Math.ceil((new Date(expiresAt) - new Date()) / 86400000);
+  const color = daysLeft > 7 ? C.green : daysLeft > 3 ? C.orange : C.red;
+  return (
+    <div style={{ display:"flex", gap:6 }}>
+      <span style={{ fontSize:11, fontWeight:700, color, background:color+"12", padding:"4px 10px", borderRadius:20 }}>
+        {daysLeft > 0 ? "Aktywne" : "Wygasłe"}
+      </span>
+      <span style={{ fontSize:11, fontWeight:700, color, background:color+"12", padding:"4px 10px", borderRadius:20 }}>
+        {daysLeft > 0 ? `${daysLeft} dni` : "0 dni"}
+      </span>
+    </div>
+  );
+}
+
 export default function PanelPracownika() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -34,6 +49,7 @@ export default function PanelPracownika() {
   const [unlocks, setUnlocks] = useState([]);
   const [view, setView] = useState("dashboard");
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -61,14 +77,13 @@ export default function PanelPracownika() {
         return;
       }
 
-      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
+      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       setAds(myAds || []);
 
-      // Pobierz odblokowania z danymi pracodawcy
       const { data: unlocksData } = await supabase
-  .from("unlocks")
-  .select("ad_id, created_at, employer_id, profiles!unlocks_employer_id_fkey(name, email)")
-  .order("created_at", { ascending: false });
+        .from("unlocks")
+        .select("ad_id, created_at, employer_id, profiles!unlocks_employer_id_fkey(name, email)")
+        .order("created_at", { ascending: false });
       setUnlocks(unlocksData || []);
 
       setLoading(false);
@@ -76,14 +91,33 @@ export default function PanelPracownika() {
     load();
   }, []);
 
+  function handleEditAd(ad) {
+    setEditingId(ad.id);
+    setForm({
+      cat: ad.category || "",
+      role: ad.role || "",
+      exp: ad.experience || "",
+      rateFrom: ad.rate_from || "",
+      rateTo: ad.rate_to || "",
+      region: ad.region || "",
+      city: ad.city || "",
+      avail: ad.available || "",
+      contract: ad.contract || [],
+      remote: ad.remote || false,
+      skills: (ad.skills || []).join(", "),
+      desc: ad.description || "",
+    });
+    setFormStep(1);
+    setView("addad");
+  }
+
   async function handleSaveAd() {
     if (!form.cat || !form.role || !form.region || !form.city) {
       alert("Wypełnij wymagane pola!"); return;
     }
     setSaving(true);
     const skillsArray = form.skills.split(",").map(s=>s.trim()).filter(Boolean);
-    const { error } = await supabase.from("ads").insert({
-      user_id: user.id,
+    const payload = {
       role: form.role,
       category: form.cat,
       city: form.city,
@@ -96,14 +130,25 @@ export default function PanelPracownika() {
       contract: form.contract,
       remote: form.remote,
       available: form.avail,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    });
+    };
+
+    let error;
+    if (editingId) {
+      ({ error } = await supabase.from("ads").update(payload).eq("id", editingId));
+    } else {
+      ({ error } = await supabase.from("ads").insert({
+        ...payload,
+        user_id: user.id,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      }));
+    }
 
     if (!error) {
-      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
+      const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       setAds(myAds || []);
       setSaved(true);
-      setView("dashboard");
+      setEditingId(null);
+      setView("myads");
       setForm({ cat:"", role:"", exp:"", rateFrom:"", rateTo:"", region:"", city:"", avail:"", contract:[], remote:false, skills:"", desc:"" });
       setFormStep(1);
     }
@@ -128,6 +173,7 @@ export default function PanelPracownika() {
   );
 
   const totalUnlocks = unlocks.length;
+  const activeAds = ads.filter(a => new Date(a.expires_at) > new Date());
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
@@ -146,9 +192,9 @@ export default function PanelPracownika() {
       <div style={{ maxWidth:900, margin:"0 auto", padding:"32px 20px" }}>
 
         {/* TABS */}
-        <div style={{ display:"flex", gap:8, marginBottom:28 }}>
-          {[["dashboard","📊 Dashboard"],["addad","➕ Dodaj ogłoszenie"],["myads","📋 Moje ogłoszenia"],["stats","📈 Statystyki"]].map(([id,label])=>(
-            <button key={id} onClick={()=>{setView(id);setSaved(false);}} style={{
+        <div style={{ display:"flex", gap:8, marginBottom:28, flexWrap:"wrap" }}>
+          {[["dashboard","📊 Dashboard"],["addad", editingId?"✏️ Edytuj ogłoszenie":"➕ Dodaj ogłoszenie"],["myads","📋 Moje ogłoszenia"],["stats","📈 Statystyki"]].map(([id,label])=>(
+            <button key={id} onClick={()=>{setView(id);setSaved(false);if(id!=="addad"){setEditingId(null);setForm({cat:"",role:"",exp:"",rateFrom:"",rateTo:"",region:"",city:"",avail:"",contract:[],remote:false,skills:"",desc:""});setFormStep(1);}}} style={{
               padding:"9px 18px", borderRadius:10, border:`1.5px solid ${view===id?C.blue:C.g200}`,
               background:view===id?C.blue:C.white, color:view===id?"#fff":C.g600,
               fontSize:13, fontWeight:600, cursor:"pointer",
@@ -161,7 +207,7 @@ export default function PanelPracownika() {
           <div>
             {saved && (
               <div style={{ background:C.green+"10", border:`1px solid ${C.green}30`, borderRadius:12, padding:"14px 18px", marginBottom:20, fontSize:14, color:C.green, fontWeight:600 }}>
-                ✅ Ogłoszenie dodane! Firmy już mogą je zobaczyć.
+                ✅ Ogłoszenie zapisane! Firmy już mogą je zobaczyć.
               </div>
             )}
             <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:22, fontWeight:800, color:C.g800, marginBottom:6 }}>Witaj, {profile?.name?.split(" ")[0] || ""}! 👋</h2>
@@ -169,19 +215,19 @@ export default function PanelPracownika() {
 
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:28 }}>
               {[
-                { icon:"📋", label:"Aktywne ogłoszenia", value: ads.length },
-                { icon:"🔓", label:"Firmy odblokował", value: totalUnlocks },
-                { icon:"👁️", label:"Łącznie ogłoszeń", value: ads.length },
+                { icon:"📋", label:"Aktywne ogłoszenia", value: activeAds.length },
+                { icon:"🔓", label:"Firmy odblokowały", value: totalUnlocks },
+                { icon:"📈", label:"Ostatnie odblokowanie", value: unlocks[0] ? new Date(unlocks[0].created_at).toLocaleDateString("pl-PL") : "—" },
               ].map((s,i)=>(
                 <div key={i} style={{ background:C.white, borderRadius:14, padding:"20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
                   <div style={{ fontSize:24, marginBottom:8 }}>{s.icon}</div>
-                  <div style={{ fontFamily:"Sora,sans-serif", fontSize:28, fontWeight:800, color:C.blue }}>{s.value}</div>
+                  <div style={{ fontFamily:"Sora,sans-serif", fontSize:i===2?18:28, fontWeight:800, color:C.blue }}>{s.value}</div>
                   <div style={{ fontSize:12, color:C.g400, marginTop:4 }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
-            {ads.length === 0 ? (
+            {activeAds.length === 0 ? (
               <div style={{ background:C.white, borderRadius:14, padding:40, textAlign:"center", border:`1px solid ${C.g100}` }}>
                 <div style={{ fontSize:48, marginBottom:16 }}>📝</div>
                 <h3 style={{ fontFamily:"Sora,sans-serif", fontSize:18, fontWeight:700, color:C.g800, marginBottom:8 }}>Nie masz jeszcze ogłoszeń</h3>
@@ -192,28 +238,27 @@ export default function PanelPracownika() {
               </div>
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                {ads.slice(0,3).map(ad=>(
+                {activeAds.slice(0,3).map(ad=>(
                   <div key={ad.id} style={{ background:C.white, borderRadius:12, padding:"16px 20px", border:`1px solid ${C.g100}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
                       <div style={{ fontWeight:700, fontSize:14, color:C.g800 }}>{ad.role}</div>
                       <div style={{ fontSize:12, color:C.g400, marginTop:2 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`}</div>
                     </div>
-                    <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                      <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
-                      <span style={{ fontSize:11, fontWeight:700, color:C.blue, background:C.blue+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
-                    </div>
+                    <AdStatusBadge expiresAt={ad.expires_at} />
                   </div>
                 ))}
-                {ads.length > 3 && <button onClick={()=>setView("myads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:600, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie ({ads.length}) →</button>}
+                {activeAds.length > 3 && <button onClick={()=>setView("myads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:600, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie ({ads.length}) →</button>}
               </div>
             )}
           </div>
         )}
 
-        {/* ADD AD */}
+        {/* ADD/EDIT AD */}
         {view==="addad" && (
           <div style={{ background:C.white, borderRadius:16, padding:32, border:`1px solid ${C.g100}`, boxShadow:"0 4px 20px rgba(26,115,232,0.06)" }}>
-            <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:6 }}>Dodaj ogłoszenie</h2>
+            <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:6 }}>
+              {editingId ? "✏️ Edytuj ogłoszenie" : "➕ Dodaj ogłoszenie"}
+            </h2>
             <p style={{ fontSize:13, color:C.g600, marginBottom:28 }}>Twoje dane kontaktowe są ukryte — firmy zobaczą je dopiero po wykupieniu dostępu.</p>
 
             <div style={{ display:"flex", gap:0, marginBottom:32 }}>
@@ -297,7 +342,7 @@ export default function PanelPracownika() {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
                   <div>
                     <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Województwo</label>
-                    <select value={form.region} onChange={e=>up("region",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }}>
+                    <select value={form.region} onChange={e=>{ up("region",e.target.value); up("city",""); }} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }}>
                       <option value="">-- wybierz --</option>
                       {REGIONS.map(r=><option key={r}>{r}</option>)}
                     </select>
@@ -311,11 +356,14 @@ export default function PanelPracownika() {
                   <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:8, textTransform:"uppercase", letterSpacing:0.5 }}>Rodzaj umowy</label>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                     {["UoP","Zlecenie","B2B","Dzieło","Dowolna"].map(c=>(
-  <label key={c} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", fontSize:13, fontWeight:500, padding:"7px 14px", borderRadius:8, border:`1.5px solid ${form.contract.includes(c)?C.blue:C.g200}`, background:form.contract.includes(c)?C.blue+"0a":C.bg, color:C.g800 }}>
-    <input type="checkbox" checked={form.contract.includes(c)} onChange={e=>{ const nc=e.target.checked?[...form.contract,c]:form.contract.filter(x=>x!==c); up("contract",nc); }} style={{ accentColor:C.blue, width:15, height:15 }} />
-    {c}
-  </label>
-))}
+                      <div key={c} onClick={()=>{ const nc=form.contract.includes(c)?form.contract.filter(x=>x!==c):[...form.contract,c]; up("contract",nc); }}
+                        style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", fontSize:13, fontWeight:500, padding:"7px 14px", borderRadius:8, border:`1.5px solid ${form.contract.includes(c)?C.blue:C.g200}`, background:form.contract.includes(c)?C.blue+"0a":C.bg, color:C.g800, userSelect:"none" }}>
+                        <div style={{ width:16, height:16, borderRadius:4, border:`2px solid ${form.contract.includes(c)?C.blue:C.g400}`, background:form.contract.includes(c)?C.blue:"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                          {form.contract.includes(c) && <span style={{ color:"#fff", fontSize:10, fontWeight:900 }}>✓</span>}
+                        </div>
+                        {c}
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:13, fontWeight:500, marginBottom:24 }}>
@@ -325,7 +373,7 @@ export default function PanelPracownika() {
                 <div style={{ display:"flex", gap:10 }}>
                   <button onClick={()=>setFormStep(2)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
                   <button onClick={handleSaveAd} disabled={saving} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>
-                    {saving ? "Zapisywanie..." : "✅ Opublikuj ogłoszenie"}
+                    {saving ? "Zapisywanie..." : editingId ? "✅ Zapisz zmiany" : "✅ Opublikuj ogłoszenie"}
                   </button>
                 </div>
               </div>
@@ -338,7 +386,7 @@ export default function PanelPracownika() {
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
               <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800 }}>Moje ogłoszenia</h2>
-              <button onClick={()=>setView("addad")} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"9px 18px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>+ Nowe</button>
+              <button onClick={()=>{ setEditingId(null); setForm({cat:"",role:"",exp:"",rateFrom:"",rateTo:"",region:"",city:"",avail:"",contract:[],remote:false,skills:"",desc:""}); setFormStep(1); setView("addad"); }} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"9px 18px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>+ Nowe</button>
             </div>
             {ads.length === 0 ? (
               <div style={{ textAlign:"center", padding:"60px 20px", color:C.g400 }}>
@@ -354,17 +402,13 @@ export default function PanelPracownika() {
                         <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:15, color:C.g800, marginBottom:2 }}>{ad.role}</div>
                         <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`}</div>
                       </div>
-                      <div style={{ display:"flex", gap:6 }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:C.green, background:C.green+"12", padding:"4px 10px", borderRadius:20 }}>Aktywne</span>
-                        <span style={{ fontSize:11, fontWeight:700, color:C.blue, background:C.blue+"12", padding:"4px 10px", borderRadius:20 }}>{Math.ceil((new Date(ad.expires_at)-new Date())/86400000)} dni</span>
-                      </div>
+                      <AdStatusBadge expiresAt={ad.expires_at} />
                     </div>
                     {ad.skills?.length > 0 && (
                       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
                         {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
                       </div>
                     )}
-                    {/* Kto odblokował */}
                     {unlocks.filter(u=>u.ad_id===ad.id).length > 0 && (
                       <div style={{ background:C.blue+"08", borderRadius:8, padding:"10px 14px", marginBottom:12, border:`1px solid ${C.blue}20` }}>
                         <div style={{ fontSize:11, fontWeight:700, color:C.blue, marginBottom:6 }}>🔓 Firmy które odblokowały Twój kontakt:</div>
@@ -376,6 +420,7 @@ export default function PanelPracownika() {
                       </div>
                     )}
                     <div style={{ display:"flex", gap:8 }}>
+                      <button onClick={()=>handleEditAd(ad)} style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.blue+"10", color:C.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>✏️ Edytuj</button>
                       <button onClick={()=>handleDeleteAd(ad.id)} style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń</button>
                     </div>
                   </div>
