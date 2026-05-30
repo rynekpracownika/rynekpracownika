@@ -656,11 +656,19 @@ function Footer({ setView }) {
               <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, color:"#fff", fontSize:11, marginBottom:12, textTransform:"uppercase", letterSpacing:1.2 }}>{col.title}</div>
               {col.links.map(l=>(
                 <div key={l} onClick={()=>{ 
-               if(l==="Regulamin") window.location.href="/regulamin"; 
-               else if(l==="RODO") window.location.href="/polityka-prywatnosci";
-               else if(l==="Kontakt") window.location.href="/kontakt";
-               else if(l==="Cennik") window.location.href="/dla-pracodawcy";
-               else if(l==="Szukaj pracowników") window.location.href="/dla-pracodawcy";
+                if(l==="Regulamin") window.location.href="/regulamin"; 
+                else if(l==="RODO") window.location.href="/polityka-prywatnosci";
+                else if(l==="Kontakt") window.location.href="/kontakt";
+                else if(l==="Cennik") window.location.href="/dla-pracodawcy";
+                else if(l==="Szukaj pracowników") window.location.href="/dla-pracodawcy";
+                else if(l==="Dodaj ogłoszenie") window.location.href="/rejestracja";
+                else if(l==="Jak to działa") window.location.href="/howitworks";
+                else if(l==="Wyróżnij profil") window.location.href="/rejestracja";
+                else if(l==="FAQ") window.location.href="/howitworks";
+                else if(l==="Ranking firm") window.location.href="/ranking";
+                else if(l==="Weryfikacja NIP") window.location.href="/dla-pracodawcy";
+                else if(l==="O nas") window.location.href="/kontakt";
+                else if(l==="Blog") window.location.href="/kontakt";
               }} style={{ fontSize:12, marginBottom:7, cursor:"pointer" }}>{l}</div>
               ))}
             </div>
