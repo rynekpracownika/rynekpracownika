@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
         <meta property="og:url" content="https://rynekpracownika.pl" />
         <meta property="og:title" content="RynekPracownika.pl – Ty podajesz warunki. Pracodawca dzwoni do Ciebie." />
         <meta property="og:description" content="Pierwsza polska platforma odwróconych ogłoszeń o pracę. Dodaj ogłoszenie za darmo – firmy płacą za kontakt do Ciebie." />
-        <meta property="og:image" content="https://rynekpracownika.pl/api/og" />
+        <meta property="og:image" content="https://rynekpracownika.pl/og-image.png" />
         <meta property="og:locale" content="pl_PL" />
         <meta property="og:site_name" content="rynekpracownika.pl" />
 
@@ -37,7 +37,7 @@ export default function RootLayout({ children }) {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="RynekPracownika.pl – Odwrócone ogłoszenia o pracę" />
         <meta name="twitter:description" content="Dodaj ogłoszenie ze swoją stawką. Firmy dzwonią do Ciebie." />
-        <meta name="twitter:image" content="https://rynekpracownika.pl/api/og" />
+        <meta name="twitter:image" content="https://rynekpracownika.pl/og-image.png" />
       </head>
       <body>
         <SessionProvider>
