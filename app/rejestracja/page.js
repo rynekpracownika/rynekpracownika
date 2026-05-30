@@ -38,6 +38,7 @@ export default function Rejestracja() {
       if (data.valid) {
         setNipStatus("valid");
         setCompanyData(data);
+        up("name", data.name);
       } else {
         setNipStatus("invalid");
         setCompanyData(null);
@@ -167,7 +168,7 @@ export default function Rejestracja() {
               <div style={{ background:C.green+"0f", border:`1px solid ${C.green}30`, borderRadius:10, padding:"14px 16px", marginBottom:20 }}>
                 <div style={{ fontSize:12, fontWeight:700, color:C.green, marginBottom:6 }}>✅ Firma zweryfikowana</div>
                 <div style={{ fontSize:14, fontWeight:700, color:C.g800 }}>{companyData.name}</div>
-                {companyData.city && <div style={{ fontSize:12, color:C.g600, marginTop:2 }}>{companyData.street}, {companyData.city}</div>}
+                {companyData.city && <div style={{ fontSize:12, color:C.g600, marginTop:2 }}>{companyData.city}</div>}
               </div>
             )}
 
@@ -190,7 +191,13 @@ export default function Rejestracja() {
         {step === 3 && (
           <div>
             {error && <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.red }}>{error}</div>}
-            {[["name","Imię i nazwisko","Jan Kowalski"],["email","Email","jan@example.pl"],["phone","Telefon","+48 500 000 000"],["password","Hasło","••••••••"],["password2","Powtórz hasło","••••••••"]].map(([key,label,placeholder])=>(
+            {[
+              ["name", type==="employer"?"Nazwa firmy":"Imię i nazwisko", type==="employer"?"Nazwa firmy":"Jan Kowalski"],
+              ["email","Email","jan@example.pl"],
+              ["phone","Telefon","+48 500 000 000"],
+              ["password","Hasło","••••••••"],
+              ["password2","Powtórz hasło","••••••••"]
+            ].map(([key,label,placeholder])=>(
               <div key={key} style={{ marginBottom:14 }}>
                 <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>{label}</label>
                 <input
