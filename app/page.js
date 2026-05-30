@@ -1,6 +1,5 @@
 "use client";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
 const C = {
@@ -68,6 +67,29 @@ function Avatar({ seed, size=42 }) {
 
 function Navbar({ view, setView }) {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        const { data: prof } = await supabase.from("profiles").select("type").eq("id", user.id).single();
+        setProfile(prof);
+      }
+    }
+    loadUser();
+  }, []);
+
+  function handleAddAd() {
+    if (user) {
+      window.location.href = profile?.type === "worker" ? "/panel/pracownik" : "/panel/pracodawca";
+    } else {
+      window.location.href = "/rejestracja?type=worker";
+    }
+  }
+
   return (
     <nav style={{ position:"sticky", top:0, zIndex:200, background:"rgba(255,255,255,0.97)", backdropFilter:"blur(12px)", borderBottom:`1px solid ${C.g100}`, boxShadow:"0 1px 12px rgba(13,71,161,0.07)" }}>
       <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px", height:60, display:"flex", alignItems:"center", gap:16 }}>
@@ -87,8 +109,21 @@ function Navbar({ view, setView }) {
           ))}
         </div>
         <div className="hide-mobile" style={{ display:"flex", gap:8, marginLeft:8 }}>
-          <Btn variant="outline" small onClick={()=>window.location.href='/logowanie'}>Zaloguj</Btn>
-          <Btn variant="primary" small onClick={()=>window.location.href='/rejestracja'}>+ Dodaj ogłoszenie</Btn>
+          {user ? (
+            <>
+              <Btn variant="ghost" small onClick={()=>window.location.href=profile?.type==="worker"?"/panel/pracownik":"/panel/pracodawca"}>
+                👤 Moje konto
+              </Btn>
+              <Btn variant="primary" small onClick={handleAddAd}>
+                {profile?.type === "worker" ? "+ Dodaj ogłoszenie" : "🔍 Szukaj pracowników"}
+              </Btn>
+            </>
+          ) : (
+            <>
+              <Btn variant="outline" small onClick={()=>window.location.href='/logowanie'}>Zaloguj</Btn>
+              <Btn variant="primary" small onClick={()=>window.location.href='/rejestracja?type=worker'}>+ Dodaj ogłoszenie</Btn>
+            </>
+          )}
         </div>
         <button className="show-mobile" onClick={()=>setOpen(!open)} style={{ background:"transparent", border:"none", cursor:"pointer", fontSize:22, padding:4 }}>☰</button>
       </div>
@@ -98,8 +133,19 @@ function Navbar({ view, setView }) {
             <button key={id} onClick={()=>{ setView(id); setOpen(false); }} style={{ background:view===id?C.blue+"10":"transparent", border:"none", cursor:"pointer", padding:"10px 14px", borderRadius:8, fontSize:14, fontWeight:view===id?700:400, color:view===id?C.blue:C.g800, textAlign:"left" }}>{label}</button>
           ))}
           <div style={{ display:"flex", gap:8, paddingTop:8, borderTop:`1px solid ${C.g100}` }}>
-            <Btn variant="outline" small onClick={()=>window.location.href='/logowanie'}>Zaloguj</Btn>
-            <Btn variant="primary" small onClick={()=>window.location.href='/rejestracja'}>+ Dodaj ogłoszenie</Btn>
+            {user ? (
+              <>
+                <Btn variant="ghost" small onClick={()=>window.location.href=profile?.type==="worker"?"/panel/pracownik":"/panel/pracodawca"}>👤 Moje konto</Btn>
+                <Btn variant="primary" small onClick={handleAddAd}>
+                  {profile?.type === "worker" ? "+ Dodaj ogłoszenie" : "🔍 Szukaj"}
+                </Btn>
+              </>
+            ) : (
+              <>
+                <Btn variant="outline" small onClick={()=>window.location.href='/logowanie'}>Zaloguj</Btn>
+                <Btn variant="primary" small onClick={()=>window.location.href='/rejestracja?type=worker'}>+ Dodaj ogłoszenie</Btn>
+              </>
+            )}
           </div>
         </div>
       )}
