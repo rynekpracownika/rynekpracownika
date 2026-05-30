@@ -14,12 +14,39 @@ export default function Rejestracja() {
   const [step, setStep] = useState(1);
   const [type, setType] = useState("");
   const [form, setForm] = useState({ name:"", email:"", phone:"", password:"", password2:"" });
+  const [nip, setNip] = useState("");
+  const [nipStatus, setNipStatus] = useState(null);
+  const [companyData, setCompanyData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const router = useRouter();
 
   const up = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  async function checkNip() {
+    const cleaned = nip.replace(/[-\s]/g, "");
+    if (cleaned.length !== 10) {
+      setNipStatus("invalid");
+      setCompanyData(null);
+      return;
+    }
+    setNipStatus("checking");
+    try {
+      const res = await fetch(`/api/nip?nip=${cleaned}`);
+      const data = await res.json();
+      if (data.valid) {
+        setNipStatus("valid");
+        setCompanyData(data);
+      } else {
+        setNipStatus("invalid");
+        setCompanyData(null);
+      }
+    } catch {
+      setNipStatus("invalid");
+      setCompanyData(null);
+    }
+  }
 
   async function handleRegister() {
     if (form.password !== form.password2) {
@@ -49,10 +76,12 @@ export default function Rejestracja() {
         name: form.name,
         phone: form.phone,
         email: form.email,
+        nip: type === "employer" ? nip.replace(/[-\s]/g, "") : null,
+        company_name: type === "employer" ? companyData?.name : null,
+        verified: type === "employer" ? nipStatus === "valid" : false,
       });
     }
 
-    // Wyślij email powitalny
     await fetch("/api/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -90,6 +119,7 @@ export default function Rejestracja() {
           <p style={{ fontSize:13, color:C.g600 }}>rynekpracownika.pl</p>
         </div>
 
+        {/* KROK 1 */}
         {step === 1 && (
           <div>
             <p style={{ fontSize:14, fontWeight:600, color:C.g800, marginBottom:16, textAlign:"center" }}>Kim jesteś?</p>
@@ -106,13 +136,58 @@ export default function Rejestracja() {
                 </div>
               ))}
             </div>
-            <button onClick={() => type && setStep(2)} style={{ width:"100%", background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer", opacity: type ? 1 : 0.5 }}>
+            <button onClick={() => type && setStep(type === "employer" ? 2 : 3)} style={{ width:"100%", background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer", opacity: type ? 1 : 0.5 }}>
               Dalej →
             </button>
           </div>
         )}
 
+        {/* KROK 2 — NIP */}
         {step === 2 && (
+          <div>
+            <p style={{ fontSize:14, fontWeight:600, color:C.g800, marginBottom:6, textAlign:"center" }}>Weryfikacja firmy</p>
+            <p style={{ fontSize:12, color:C.g400, marginBottom:24, textAlign:"center" }}>Podaj NIP firmy — zweryfikujemy ją w rejestrze GUS</p>
+
+            <div style={{ marginBottom:14 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>NIP firmy</label>
+              <div style={{ display:"flex", gap:8 }}>
+                <input
+                  placeholder="np. 8722387194"
+                  value={nip}
+                  onChange={e => { setNip(e.target.value); setNipStatus(null); setCompanyData(null); }}
+                  style={{ flex:1, padding:"10px 12px", borderRadius:8, border:`1.5px solid ${nipStatus==="valid"?C.green:nipStatus==="invalid"?C.red:C.g200}`, fontSize:13, outline:"none", background:C.bg, color:C.g800 }}
+                />
+                <button onClick={checkNip} disabled={nipStatus==="checking"} style={{ padding:"10px 16px", borderRadius:8, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+                  {nipStatus==="checking" ? "⏳" : "Sprawdź"}
+                </button>
+              </div>
+            </div>
+
+            {nipStatus === "valid" && companyData && (
+              <div style={{ background:C.green+"0f", border:`1px solid ${C.green}30`, borderRadius:10, padding:"14px 16px", marginBottom:20 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:C.green, marginBottom:6 }}>✅ Firma zweryfikowana</div>
+                <div style={{ fontSize:14, fontWeight:700, color:C.g800 }}>{companyData.name}</div>
+                {companyData.city && <div style={{ fontSize:12, color:C.g600, marginTop:2 }}>{companyData.street}, {companyData.city}</div>}
+              </div>
+            )}
+
+            {nipStatus === "invalid" && (
+              <div style={{ background:C.red+"0f", border:`1px solid ${C.red}30`, borderRadius:10, padding:"12px 16px", marginBottom:20 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:C.red }}>❌ Nie znaleziono firmy o podanym NIP</div>
+              </div>
+            )}
+
+            <div style={{ display:"flex", gap:10, marginTop:8 }}>
+              <button onClick={() => setStep(1)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
+              <button onClick={() => setStep(3)} disabled={nipStatus !== "valid"} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer", opacity: nipStatus === "valid" ? 1 : 0.5 }}>
+                Dalej →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* KROK 3 — dane */}
+        {step === 3 && (
           <div>
             {error && <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.red }}>{error}</div>}
             {[["name","Imię i nazwisko","Jan Kowalski"],["email","Email","jan@example.pl"],["phone","Telefon","+48 500 000 000"],["password","Hasło","••••••••"],["password2","Powtórz hasło","••••••••"]].map(([key,label,placeholder])=>(
@@ -123,12 +198,12 @@ export default function Rejestracja() {
                   placeholder={placeholder}
                   value={form[key]}
                   onChange={e => up(key, e.target.value)}
-                  style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }}
+                  style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:C.g800 }}
                 />
               </div>
             ))}
             <div style={{ display:"flex", gap:10, marginTop:20 }}>
-              <button onClick={() => setStep(1)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
+              <button onClick={() => setStep(type === "employer" ? 2 : 1)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
               <button onClick={handleRegister} disabled={loading} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>
                 {loading ? "Rejestrowanie..." : "Utwórz konto →"}
               </button>

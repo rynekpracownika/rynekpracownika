@@ -15,7 +15,7 @@ export default function Logowanie() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [view, setView] = useState("login"); // login | reset | resetSent
+  const [view, setView] = useState("login");
   const router = useRouter();
 
   async function handleLogin() {
@@ -40,6 +40,12 @@ export default function Logowanie() {
     setView("resetSent");
   }
 
+  const inputStyle = {
+    width:"100%", padding:"10px 12px", borderRadius:8,
+    border:`1.5px solid ${C.g200}`, fontSize:13,
+    outline:"none", background:C.bg, color:C.g800,
+  };
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ background:C.white, borderRadius:16, padding:40, maxWidth:420, width:"100%", boxShadow:"0 4px 20px rgba(0,0,0,0.08)" }}>
@@ -55,14 +61,11 @@ export default function Logowanie() {
             {error && <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.red }}>{error}</div>}
             <div style={{ marginBottom:14 }}>
               <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Email</label>
-              <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="jan@example.pl" type="email"
-                style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
+              <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="jan@example.pl" type="email" style={inputStyle} />
             </div>
             <div style={{ marginBottom:8 }}>
               <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Hasło</label>
-              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" type="password"
-                onKeyDown={e=>e.key==="Enter"&&handleLogin()}
-                style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
+              <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" type="password" onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={inputStyle} />
             </div>
             <div style={{ textAlign:"right", marginBottom:20 }}>
               <span onClick={()=>{ setView("reset"); setError(""); }} style={{ fontSize:12, color:C.blue, cursor:"pointer", fontWeight:600 }}>
@@ -89,8 +92,7 @@ export default function Logowanie() {
             {error && <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:C.red }}>{error}</div>}
             <div style={{ marginBottom:24 }}>
               <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Email</label>
-              <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="jan@example.pl" type="email"
-                style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg }} />
+              <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="jan@example.pl" type="email" style={inputStyle} />
             </div>
             <button onClick={handleReset} disabled={loading} style={{ width:"100%", background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
               {loading ? "Wysyłanie..." : "Wyślij link resetujący →"}
@@ -114,7 +116,6 @@ export default function Logowanie() {
             </button>
           </div>
         )}
-
       </div>
     </div>
   );
