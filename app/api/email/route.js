@@ -85,6 +85,26 @@ export async function POST(request) {
       `;
     }
 
+    if (type === "contact") {
+      subject = `📨 ${data.subject || "Wiadomość z formularza kontaktowego"}`;
+      html = `
+        <div style="font-family: DM Sans, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #F5F7FA;">
+          <div style="background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(26,115,232,0.06);">
+            <h1 style="font-size: 20px; font-weight: 800; color: #1E293B; margin-bottom: 24px;">📨 Nowa wiadomość z formularza</h1>
+            <div style="background: #F5F7FA; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #E8ECF0;">
+              <p style="margin: 0 0 8px; font-size: 13px; color: #94A3B8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Od:</p>
+              <p style="margin: 0 0 16px; font-size: 15px; color: #1E293B; font-weight: 600;">${data.name} &lt;${data.email}&gt;</p>
+              <p style="margin: 0 0 8px; font-size: 13px; color: #94A3B8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Temat:</p>
+              <p style="margin: 0 0 16px; font-size: 15px; color: #1E293B;">${data.subject || "Brak tematu"}</p>
+              <p style="margin: 0 0 8px; font-size: 13px; color: #94A3B8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Wiadomość:</p>
+              <p style="margin: 0; font-size: 15px; color: #1E293B; line-height: 1.7; white-space: pre-wrap;">${data.message}</p>
+            </div>
+            <p style="font-size: 12px; color: #94A3B8; margin: 0;">Odpowiedz na: <a href="mailto:${data.email}" style="color: #1A73E8;">${data.email}</a></p>
+          </div>
+        </div>
+      `;
+    }
+
     const { data: emailData, error } = await resend.emails.send({
       from: "rynekpracownika.pl <kontakt@rynekpracownika.pl>",
       to,
