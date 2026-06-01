@@ -128,7 +128,10 @@ function Navbar({ view, setView }) {
         <div style={{ flex:1 }} />
         <div className="hide-mobile" style={{ display:"flex", gap:2 }}>
           {[["home","Strona główna"],["ads","Ogłoszenia"],["ranking","Ranking firm"],["howitworks","Jak to działa"]].map(([id,label])=>(
-            <button key={id} onClick={()=>setView(id)} style={{ background:view===id?C.blue+"10":"transparent", border:"none", cursor:"pointer", padding:"7px 13px", borderRadius:7, fontSize:13, fontWeight:view===id?700:400, color:view===id?C.blue:C.g600 }}>{label}</button>
+            <button key={id} onClick={()=>{ 
+  if(id==="ranking") { window.location.href="/ranking"; return; }
+  if(id==="howitworks") { window.location.href="/howitworks"; return; }
+  setView(id); }} style={{ background:view===id?C.blue+"10":"transparent", border:"none", cursor:"pointer", padding:"7px 13px", borderRadius:7, fontSize:13, fontWeight:view===id?700:400, color:view===id?C.blue:C.g600 }}>{label}</button>
           ))}
         </div>
         <div className="hide-mobile" style={{ display:"flex", gap:8, marginLeft:8 }}>
