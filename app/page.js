@@ -297,8 +297,8 @@ function AdCard({ ad, preview, onUnlock }) {
           <div style={{ fontSize:11, color:C.g400 }}>{cat?.icon} {cat?.label} · {ad.city}, {ad.region}</div>
         </div>
         <div style={{ textAlign:"right", flexShrink:0 }}>
-          <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{ad.rate || (ad.rate_from && `${ad.rate_from}${ad.rate_to?`–${ad.rate_to}`:""} zł/h`)}</div>
-          <div style={{ fontSize:10, color:C.g400 }}>za godz.</div>
+          <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{ad.rate || (ad.rate_from && `${ad.rate_from}${ad.rate_to?`–${ad.rate_to}`:""}`)}</div>
+          <div style={{ fontSize:10, color:C.g400 }}>zł/h netto (na rękę)</div>
         </div>
       </div>
       {!preview && <p style={{ fontSize:12, color:C.g600, lineHeight:1.6, marginBottom:12, borderTop:`1px solid ${C.g100}`, paddingTop:10 }}>{ad.desc || ad.description}</p>}
@@ -513,7 +513,7 @@ function AddAdView({ setView }) {
                   </select>
                 </div>
               ))}
-              {[["rateFrom","Stawka od (zł/h)","np. 30"],["rateTo","Stawka do (zł/h)","np. 45"]].map(([k,l,p])=>(
+              {[["rateFrom","Stawka od (zł/h netto)","np. 30"],["rateTo","Stawka do (zł/h netto)","np. 45"]].map(([k,l,p])=>(
                 <div key={k}>
                   <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>{l}</label>
                   <input type="number" placeholder={p} value={form[k]} onChange={e=>up(k,e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none" }} />
