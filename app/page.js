@@ -67,8 +67,10 @@ function Avatar({ seed, size=42 }) {
 
 function Navbar({ view, setView }) {
   const [open, setOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  
 
   useEffect(() => {
     async function loadUser() {
@@ -83,15 +85,36 @@ function Navbar({ view, setView }) {
   }, []);
 
   function handleAddAd() {
-    if (user) {
-      window.location.href = profile?.type === "worker" ? "/panel/pracownik" : "/panel/pracodawca";
-    } else {
-      window.location.href = "/rejestracja?type=worker";
-    }
+  if (user) {
+    window.location.href = profile?.type === "worker" ? "/panel/pracownik" : "/panel/pracodawca";
+  } else {
+    setShowAuthModal(true);
   }
+}
 
   return (
+    <> {showAuthModal && (
+  <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowAuthModal(false)}>
+    <div style={{ background:"#fff", borderRadius:18, padding:36, maxWidth:400, width:"100%", textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
+      <div style={{ fontSize:48, marginBottom:16 }}>👷</div>
+      <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:22, color:"#1E293B", marginBottom:8 }}>Dodaj ogłoszenie</h3>
+      <p style={{ fontSize:14, color:"#475569", marginBottom:28, lineHeight:1.6 }}>Zaloguj się lub zarejestruj żeby dodać ogłoszenie ze swoją stawką.</p>
+      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        <button onClick={()=>window.location.href="/logowanie"} style={{ width:"100%", background:`linear-gradient(135deg,#1A73E8,#0D47A1)`, color:"#fff", border:"none", padding:"13px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+          Mam już konto → Zaloguj się
+        </button>
+        <button onClick={()=>window.location.href="/rejestracja?type=worker"} style={{ width:"100%", background:"transparent", color:"#1A73E8", border:"1.5px solid #1A73E8", padding:"13px", borderRadius:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>
+          Nowy użytkownik → Zarejestruj się
+        </button>
+      </div>
+      <button onClick={()=>setShowAuthModal(false)} style={{ marginTop:14, background:"transparent", border:"none", color:"#94A3B8", fontSize:12, cursor:"pointer" }}>
+        Anuluj
+      </button>
+    </div>
+  </div>
+)}
     <nav style={{ position:"sticky", top:0, zIndex:200, background:"rgba(255,255,255,0.97)", backdropFilter:"blur(12px)", borderBottom:`1px solid ${C.g100}`, boxShadow:"0 1px 12px rgba(13,71,161,0.07)" }}>
+
       <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 20px", height:60, display:"flex", alignItems:"center", gap:16 }}>
         <div onClick={()=>setView("home")} style={{ cursor:"pointer", display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
           <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg,${C.blue},${C.navy})`, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -121,7 +144,7 @@ function Navbar({ view, setView }) {
           ) : (
             <>
               <Btn variant="outline" small onClick={()=>window.location.href='/logowanie'}>Zaloguj</Btn>
-              <Btn variant="primary" small onClick={()=>window.location.href='/rejestracja?type=worker'}>+ Dodaj ogłoszenie</Btn>
+              <Btn variant="primary" small onClick={handleAddAd}>+ Dodaj ogłoszenie</Btn>
             </>
           )}
         </div>
@@ -150,6 +173,7 @@ function Navbar({ view, setView }) {
         </div>
       )}
     </nav>
+  </>
   );
 }
 
