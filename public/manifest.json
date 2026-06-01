@@ -1,7 +1,7 @@
 {
   "name": "rynekpracownika.pl",
-  "short_name": "RynekPracy",
-  "description": "Polska platforma odwróconych ogłoszeń o pracę",
+  "short_name": "RynekPracownika",
+  "description": "Pierwsza polska platforma odwróconych ogłoszeń o pracę. Ty podajesz warunki. Pracodawca dzwoni do Ciebie.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F7FA",
