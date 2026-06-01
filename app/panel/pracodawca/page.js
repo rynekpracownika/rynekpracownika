@@ -38,6 +38,8 @@ export default function PanelPracodawcy() {
   const [region, setRegion] = useState("Cała Polska");
   const [cat, setCat] = useState("all");
   const [showUnlock, setShowUnlock] = useState(null);
+  const [page, setPage] = useState(0);
+  const PER_PAGE = 10;
   const router = useRouter();
 
   useEffect(() => {
@@ -77,6 +79,8 @@ export default function PanelPracodawcy() {
     );
   });
 
+  const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/");
@@ -87,16 +91,15 @@ export default function PanelPracodawcy() {
   }
 
   async function confirmUnlock(ad) {
-  const { error } = await supabase.from("unlocks").upsert({
-    employer_id: user.id,
-    ad_id: ad.id,
-  }, { onConflict: "employer_id,ad_id" });
-  
-  console.log("unlock error:", error);
-  setUnlocked(u => ({...u, [ad.id]: true}));
-  setShowUnlock(null);
-  setView("contacts");
-}
+    const { error } = await supabase.from("unlocks").upsert({
+      employer_id: user.id,
+      ad_id: ad.id,
+    }, { onConflict: "employer_id,ad_id" });
+    console.log("unlock error:", error);
+    setUnlocked(u => ({...u, [ad.id]: true}));
+    setShowUnlock(null);
+    setView("contacts");
+  }
 
   if (loading) return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -164,13 +167,13 @@ export default function PanelPracodawcy() {
                 <input
                   placeholder="🔍 Zawód, umiejętność, miasto..."
                   value={search}
-                  onChange={e=>setSearch(e.target.value)}
+                  onChange={e=>{ setSearch(e.target.value); setPage(0); }}
                   style={inputStyle}
                 />
-                <select value={region} onChange={e=>setRegion(e.target.value)} style={selectStyle}>
+                <select value={region} onChange={e=>{ setRegion(e.target.value); setPage(0); }} style={selectStyle}>
                   {REGIONS.map(r=><option key={r}>{r}</option>)}
                 </select>
-                <select value={cat} onChange={e=>setCat(e.target.value)} style={selectStyle}>
+                <select value={cat} onChange={e=>{ setCat(e.target.value); setPage(0); }} style={selectStyle}>
                   {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
               </div>
@@ -184,51 +187,62 @@ export default function PanelPracodawcy() {
                 <div style={{ fontSize:13 }}>Zmień filtry lub wróć później.</div>
               </div>
             ) : (
-              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-                {filtered.map(ad=>(
-                  <div key={ad.id} style={{ background:C.white, borderRadius:14, padding:"20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 10px rgba(26,115,232,0.04)" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-                      <div>
-                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:16, color:C.g800, marginBottom:3 }}>{ad.role}</div>
-                        <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.experience} dośw. · {ad.available}</div>
-                      </div>
-                      <div style={{ textAlign:"right" }}>
-                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
-                          {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h
+              <div>
+                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                  {paginated.map(ad=>(
+                    <div key={ad.id} style={{ background:C.white, borderRadius:14, padding:"20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 10px rgba(26,115,232,0.04)" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                        <div>
+                          <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:16, color:C.g800, marginBottom:3 }}>{ad.role}</div>
+                          <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.experience} dośw. · {ad.available}</div>
                         </div>
-                        {ad.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
+                        <div style={{ textAlign:"right" }}>
+                          <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
+                            {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)
+                          </div>
+                          {ad.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
+                        </div>
                       </div>
+
+                      {ad.skills?.length > 0 && (
+                        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
+                          {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
+                        </div>
+                      )}
+
+                      {ad.description && (
+                        <p style={{ fontSize:13, color:C.g600, lineHeight:1.6, marginBottom:12 }}>{ad.description}</p>
+                      )}
+
+                      {unlocked[ad.id] ? (
+                        <div style={{ background:C.green+"0a", borderRadius:10, padding:"14px 16px", border:`1px solid ${C.green}30` }}>
+                          <div style={{ fontSize:11, fontWeight:700, color:C.green, marginBottom:8 }}>✅ Dane kontaktowe odblokowane</div>
+                          <div style={{ fontSize:14, fontWeight:700, color:C.g800 }}>{ad.profiles?.name}</div>
+                          <div style={{ fontSize:13, color:C.blue, fontWeight:600 }}>☎ {ad.profiles?.phone}</div>
+                          <div style={{ fontSize:12, color:C.g600 }}>✉ {ad.profiles?.email}</div>
+                        </div>
+                      ) : (
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.bg, borderRadius:10, padding:"12px 16px", border:`1px dashed ${C.g200}` }}>
+                          <div style={{ fontSize:12, color:C.g400 }}>
+                            🔒 <span style={{ fontFamily:"monospace", letterSpacing:2, color:C.g200 }}>Jan K***** · +48 5** *** ***</span>
+                          </div>
+                          <button onClick={()=>handleUnlock(ad)} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"8px 16px", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                            🔓 Odblokuj kontakt
+                          </button>
+                        </div>
+                      )}
                     </div>
+                  ))}
+                </div>
 
-                    {ad.skills?.length > 0 && (
-                      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
-                        {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
-                      </div>
-                    )}
-
-                    {ad.description && (
-                      <p style={{ fontSize:13, color:C.g600, lineHeight:1.6, marginBottom:12 }}>{ad.description}</p>
-                    )}
-
-                    {unlocked[ad.id] ? (
-                      <div style={{ background:C.green+"0a", borderRadius:10, padding:"14px 16px", border:`1px solid ${C.green}30` }}>
-                        <div style={{ fontSize:11, fontWeight:700, color:C.green, marginBottom:8 }}>✅ Dane kontaktowe odblokowane</div>
-                        <div style={{ fontSize:14, fontWeight:700, color:C.g800 }}>{ad.profiles?.name}</div>
-                        <div style={{ fontSize:13, color:C.blue, fontWeight:600 }}>☎ {ad.profiles?.phone}</div>
-                        <div style={{ fontSize:12, color:C.g600 }}>✉ {ad.profiles?.email}</div>
-                      </div>
-                    ) : (
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.bg, borderRadius:10, padding:"12px 16px", border:`1px dashed ${C.g200}` }}>
-                        <div style={{ fontSize:12, color:C.g400 }}>
-                          🔒 <span style={{ fontFamily:"monospace", letterSpacing:2, color:C.g200 }}>Jan K***** · +48 5** *** ***</span>
-                        </div>
-                        <button onClick={()=>handleUnlock(ad)} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"8px 16px", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
-                          🔓 Odblokuj kontakt
-                        </button>
-                      </div>
-                    )}
+                {/* PAGINACJA */}
+                {filtered.length > PER_PAGE && (
+                  <div style={{ display:"flex", gap:8, justifyContent:"center", alignItems:"center", marginTop:24 }}>
+                    <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={page===0} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.g200}`, background:C.white, fontSize:13, cursor:"pointer", color:C.g600, opacity:page===0?0.4:1 }}>← Poprzednia</button>
+                    <span style={{ padding:"8px 16px", fontSize:13, color:C.g600, fontWeight:600 }}>Strona {page+1} z {Math.ceil(filtered.length/PER_PAGE)}</span>
+                    <button onClick={()=>setPage(p=>p+1)} disabled={(page+1)*PER_PAGE>=filtered.length} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.g200}`, background:C.white, fontSize:13, cursor:"pointer", color:C.g600, opacity:(page+1)*PER_PAGE>=filtered.length?0.4:1 }}>Następna →</button>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
@@ -253,7 +267,7 @@ export default function PanelPracodawcy() {
                         <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region}</div>
                       </div>
                       <div style={{ textAlign:"right" }}>
-                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h</div>
+                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)</div>
                         <div style={{ fontSize:11, color:C.g400 }}>{ad.experience} dośw.</div>
                       </div>
                     </div>
