@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ const C = {
   green: "#16A34A", red: "#DC2626",
 };
 
-export default function Rejestracja() {
+function RejestracjaForm() {
   const [step, setStep] = useState(1);
   const [type, setType] = useState("");
   const [form, setForm] = useState({ name:"", email:"", phone:"", password:"", password2:"" });
@@ -24,11 +24,11 @@ export default function Rejestracja() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-useEffect(() => {
-  const t = searchParams.get("type");
-  if (t === "worker") { setType("worker"); setStep(3); }
-  if (t === "employer") { setType("employer"); setStep(2); }
-}, []);
+  useEffect(() => {
+    const t = searchParams.get("type");
+    if (t === "worker") { setType("worker"); setStep(3); }
+    if (t === "employer") { setType("employer"); setStep(2); }
+  }, []);
 
   const up = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -62,14 +62,14 @@ useEffect(() => {
       setError("Hasła nie są identyczne!"); return;
     }
     if (!form.name || !form.email || !form.password) {
-  setError("Wypełnij wszystkie pola!"); return;
-}
-if (type === "worker" && !form.phone) {
-  setError("Numer telefonu jest wymagany — pracodawca musi mieć możliwość kontaktu!"); return;
-}
-if (type === "employer" && !form.phone) {
-  setError("Numer telefonu jest wymagany!"); return;
-}
+      setError("Wypełnij wszystkie pola!"); return;
+    }
+    if (type === "worker" && !form.phone) {
+      setError("Numer telefonu jest wymagany — pracodawca musi mieć możliwość kontaktu!"); return;
+    }
+    if (type === "employer" && !form.phone) {
+      setError("Numer telefonu jest wymagany!"); return;
+    }
     setLoading(true);
     setError("");
 
@@ -236,5 +236,13 @@ if (type === "employer" && !form.phone) {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Rejestracja() {
+  return (
+    <Suspense fallback={<div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"DM Sans,sans-serif", color:"#475569" }}>Ładowanie...</div>}>
+      <RejestracjaForm />
+    </Suspense>
   );
 }
