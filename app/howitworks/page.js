@@ -15,7 +15,7 @@ export default function HowItWorks() {
   const faq = [
     { q:"Czy ogłoszenie jest płatne?", a:"Dla pracownika ogłoszenie jest zawsze bezpłatne. Firmy płacą za odblokowanie danych kontaktowych." },
     { q:"Czy moje dane są widoczne publicznie?", a:"Nie. Wyświetlany jest tylko Twój profil zawodowy. Imię i telefon są ukryte." },
-    { q:"Co się dzieje gdy firma odblokuje moje dane?", a:"Dostajesz SMS z powiadomieniem. To Ty decydujesz czy odebrać telefon." },
+    { q:"Co się dzieje gdy firma odblokuje moje dane?", a:"Dostajesz powiadomienie email. To Ty decydujesz czy odebrać telefon i podjąć rozmowę." },
     { q:"Jak długo aktywne jest ogłoszenie?", a:"Ogłoszenie jest aktywne przez 30 dni. Możesz je przedłużyć lub usunąć w każdej chwili." },
     { q:"Jak firmy są weryfikowane?", a:"Każda firma musi podać NIP, który weryfikujemy w GUS." },
   ];
