@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +22,13 @@ export default function Rejestracja() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+useEffect(() => {
+  const t = searchParams.get("type");
+  if (t === "worker") { setType("worker"); setStep(3); }
+  if (t === "employer") { setType("employer"); setStep(2); }
+}, []);
 
   const up = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -53,9 +61,15 @@ export default function Rejestracja() {
     if (form.password !== form.password2) {
       setError("Hasła nie są identyczne!"); return;
     }
-    if (!form.name || !form.email || !form.phone || !form.password) {
-      setError("Wypełnij wszystkie pola!"); return;
-    }
+    if (!form.name || !form.email || !form.password) {
+  setError("Wypełnij wszystkie pola!"); return;
+}
+if (type === "worker" && !form.phone) {
+  setError("Numer telefonu jest wymagany — pracodawca musi mieć możliwość kontaktu!"); return;
+}
+if (type === "employer" && !form.phone) {
+  setError("Numer telefonu jest wymagany!"); return;
+}
     setLoading(true);
     setError("");
 
@@ -194,7 +208,7 @@ export default function Rejestracja() {
             {[
               ["name", type==="employer"?"Nazwa firmy":"Imię i nazwisko", type==="employer"?"Nazwa firmy":"Jan Kowalski"],
               ["email","Email","jan@example.pl"],
-              ["phone","Telefon","+48 500 000 000"],
+              ["phone","Telefon *","+48 500 000 000"],
               ["password","Hasło","••••••••"],
               ["password2","Powtórz hasło","••••••••"]
             ].map(([key,label,placeholder])=>(
