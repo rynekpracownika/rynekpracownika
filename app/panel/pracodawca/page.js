@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
+import CityAutocomplete from "@/app/components/CityAutocomplete";
 
 const C = {
   blue:"#1A73E8", navy:"#0D47A1", bg:"#F5F7FA",
@@ -17,7 +18,7 @@ const REGIONS = [
 ];
 
 const CATEGORIES = [
-  { id:"all",        label:"Wszystkie" },
+  { id:"all", label:"Wszystkie kategorie" },
   { id:"budowlanka", label:"🏗️ Budowlanka" },
   { id:"produkcja",  label:"🏭 Produkcja" },
   { id:"logistyka",  label:"🚚 Transport" },
@@ -26,6 +27,17 @@ const CATEGORIES = [
   { id:"it",         label:"💻 IT" },
   { id:"biuro",      label:"📋 Biuro" },
 ];
+
+const ROLES = {
+  all: [],
+  budowlanka: ["Elektryk","Hydraulik","Murarz","Tynkarz","Malarz","Dekarz","Cieśla","Spawacz"],
+  produkcja:  ["Operator maszyn","Kontroler jakości","Magazynier","Pakowacz"],
+  logistyka:  ["Kierowca C+E","Kierowca B","Kurier","Spedytor","Magazynier"],
+  handel:     ["Sprzedawca","Kasjer","Doradca klienta","Handlowiec"],
+  uslugi:     ["Mechanik","Fryzjer","Kucharz","Kelner","Ochroniarz"],
+  it:         ["Programista","Administrator IT","Helpdesk","Tester"],
+  biuro:      ["Księgowa","Asystentka","HR","Recepcjonistka"],
+};
 
 function ProfileEdit({ user, profile, setProfile }) {
   const [phone, setPhone] = useState(profile?.phone || "");
@@ -76,7 +88,6 @@ function ProfileEdit({ user, profile, setProfile }) {
           {savingPhone ? "Zapisywanie..." : "Zapisz telefon"}
         </button>
       </div>
-
       <div>
         <div style={{ fontSize:13, fontWeight:700, color:C.g600, marginBottom:12, textTransform:"uppercase", letterSpacing:0.5 }}>Zmień hasło</div>
         {[["Nowe hasło", newPassword, setNewPassword],["Powtórz nowe hasło", newPassword2, setNewPassword2]].map(([label, val, setter])=>(
@@ -104,7 +115,12 @@ export default function PanelPracodawcy() {
   const [view, setView] = useState("search");
   const [search, setSearch] = useState("");
   const [region, setRegion] = useState("Cała Polska");
+  const [city, setCity] = useState("");
   const [cat, setCat] = useState("all");
+  const [role, setRole] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [rateMin, setRateMin] = useState("");
+  const [rateMax, setRateMax] = useState("");
   const [showUnlock, setShowUnlock] = useState(null);
   const [page, setPage] = useState(0);
   const PER_PAGE = 10;
@@ -115,24 +131,17 @@ export default function PanelPracodawcy() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/logowanie"); return; }
       setUser(user);
-
       const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setProfile(prof);
-      if (prof?.type === "worker") {
-        router.push("/panel/pracownik");
-        return;
-      }
-
+      if (prof?.type === "worker") { router.push("/panel/pracownik"); return; }
       const { data: allAds } = await supabase.from("ads").select("*, profiles(name, phone, email)").eq("status","active").order("created_at", { ascending: false });
       setAds(allAds || []);
-
       const { data: unlocksData } = await supabase.from("unlocks").select("ad_id").eq("employer_id", user.id);
       if (unlocksData) {
         const map = {};
         unlocksData.forEach(u => { map[u.ad_id] = true; });
         setUnlocked(map);
       }
-
       setLoading(false);
     }
     load();
@@ -140,29 +149,34 @@ export default function PanelPracodawcy() {
 
   const filtered = ads.filter(a => {
     const q = search.toLowerCase();
+    const min = rateMin ? parseInt(rateMin) : null;
+    const max = rateMax ? parseInt(rateMax) : null;
     return (
       (!search || a.role?.toLowerCase().includes(q) || a.skills?.some(s=>s.toLowerCase().includes(q)) || a.city?.toLowerCase().includes(q)) &&
       (region === "Cała Polska" || a.region === region) &&
-      (cat === "all" || a.category === cat)
+      (!city || a.city?.toLowerCase() === city.toLowerCase()) &&
+      (cat === "all" || a.category === cat) &&
+      (role === "all" || a.role === role) &&
+      (!min || (a.rate_from || 0) >= min) &&
+      (!max || (a.rate_from || 0) <= max)
     );
   });
 
-  const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "rate_asc") return (a.rate_from || 0) - (b.rate_from || 0);
+    if (sortBy === "rate_desc") return (b.rate_from || 0) - (a.rate_from || 0);
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  const paginated = sorted.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/");
   }
 
-  function handleUnlock(ad) {
-    setShowUnlock(ad);
-  }
-
   async function confirmUnlock(ad) {
-    const { error } = await supabase.from("unlocks").upsert({
-      employer_id: user.id,
-      ad_id: ad.id,
-    }, { onConflict: "employer_id,ad_id" });
+    const { error } = await supabase.from("unlocks").upsert({ employer_id: user.id, ad_id: ad.id }, { onConflict: "employer_id,ad_id" });
     console.log("unlock error:", error);
     setUnlocked(u => ({...u, [ad.id]: true}));
     setShowUnlock(null);
@@ -178,14 +192,14 @@ export default function PanelPracodawcy() {
   const inputStyle = { padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:C.g800 };
   const selectStyle = { padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", cursor:"pointer", color:C.g800 };
 
+  const availableRoles = cat !== "all" ? ROLES[cat] || [] : [];
+
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
 
-      {/* Unlock modal */}
       {showUnlock && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
-          onClick={()=>setShowUnlock(null)}>
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowUnlock(null)}>
           <div style={{ background:C.white, borderRadius:18, padding:32, maxWidth:380, width:"100%" }} onClick={e=>e.stopPropagation()}>
             <div style={{ fontSize:40, textAlign:"center", marginBottom:14 }}>🔓</div>
             <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:19, color:C.g800, textAlign:"center", marginBottom:8 }}>Odblokuj dane kontaktowe</h3>
@@ -208,7 +222,6 @@ export default function PanelPracodawcy() {
         </div>
       )}
 
-      {/* TOPBAR */}
       <div style={{ background:C.white, borderBottom:`1px solid ${C.g100}`, padding:"0 20px", height:56, display:"flex", alignItems:"center", gap:12, position:"sticky", top:0, zIndex:100, boxShadow:"0 1px 8px rgba(0,0,0,0.05)" }}>
         <div onClick={()=>router.push("/")} style={{ cursor:"pointer", fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
           rynek<span style={{ color:C.blue }}>pracownika</span>
@@ -220,26 +233,50 @@ export default function PanelPracodawcy() {
 
       <div style={{ maxWidth:1000, margin:"0 auto", padding:"32px 20px" }}>
 
-        {/* TABS */}
         <div style={{ display:"flex", gap:8, marginBottom:28 }}>
           {[["search","🔍 Szukaj pracowników"],["contacts","📞 Moje kontakty"],["profile","👤 Profil"]].map(([id,label])=>(
             <button key={id} onClick={()=>setView(id)} style={{ padding:"9px 18px", borderRadius:10, border:`1.5px solid ${view===id?C.blue:C.g200}`, background:view===id?C.blue:C.white, color:view===id?"#fff":C.g600, fontSize:13, fontWeight:600, cursor:"pointer" }}>{label}</button>
           ))}
         </div>
 
-        {/* SEARCH */}
         {view==="search" && (
           <div>
             <div style={{ background:C.white, borderRadius:14, padding:"16px 20px", border:`1px solid ${C.g100}`, marginBottom:20, boxShadow:"0 2px 10px rgba(26,115,232,0.05)" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 180px 180px", gap:10, marginBottom:12 }}>
-                <input placeholder="🔍 Zawód, umiejętność, miasto..." value={search} onChange={e=>{ setSearch(e.target.value); setPage(0); }} style={inputStyle} />
-                <select value={region} onChange={e=>{ setRegion(e.target.value); setPage(0); }} style={selectStyle}>
-                  {REGIONS.map(r=><option key={r}>{r}</option>)}
-                </select>
-                <select value={cat} onChange={e=>{ setCat(e.target.value); setPage(0); }} style={selectStyle}>
-                  {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
-                </select>
-              </div>
+              
+              {/* Wiersz 1 — wyszukiwarka + województwo + miasto */}
+<div style={{ display:"grid", gridTemplateColumns:"1fr 180px 180px", gap:10, marginBottom:10 }}>
+  <input placeholder="🔍 Zawód, umiejętność..." value={search} onChange={e=>{ setSearch(e.target.value); setPage(0); }} style={inputStyle} />
+  <select value={region} onChange={e=>{ setRegion(e.target.value); setCity(""); setPage(0); }} style={selectStyle}>
+    {REGIONS.map(r=><option key={r}>{r}</option>)}
+  </select>
+  <CityAutocomplete value={city} onChange={v=>{ setCity(v); setPage(0); }} region={region==="Cała Polska" ? "" : region} />
+</div>
+
+              {/* Wiersz 2 — kategoria + zawód + sortowanie */}
+<div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
+  <select value={cat} onChange={e=>{ setCat(e.target.value); setRole("all"); setPage(0); }} style={selectStyle}>
+    {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+  </select>
+  <select value={role} onChange={e=>{ setRole(e.target.value); setPage(0); }} style={selectStyle} disabled={cat==="all"}>
+    <option value="all">{cat==="all" ? "Wybierz kategorię" : "Wszystkie zawody"}</option>
+    {availableRoles.map(r=><option key={r} value={r}>{r}</option>)}
+  </select>
+  <select value={sortBy} onChange={e=>{ setSortBy(e.target.value); setPage(0); }} style={selectStyle}>
+    <option value="newest">Najnowsze</option>
+    <option value="rate_desc">Stawka: najwyższa</option>
+    <option value="rate_asc">Stawka: najniższa</option>
+  </select>
+</div>
+
+              {/* Wiersz 3 — filtry stawki */}
+<div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:10, marginBottom:12, alignItems:"center" }}>
+  <input type="number" placeholder="Stawka od (zł/h)" value={rateMin} onChange={e=>{ setRateMin(e.target.value); setPage(0); }} style={inputStyle} />
+  <input type="number" placeholder="Stawka do (zł/h)" value={rateMax} onChange={e=>{ setRateMax(e.target.value); setPage(0); }} style={inputStyle} />
+  <button onClick={()=>{ setSearch(""); setRegion("Cała Polska"); setCat("all"); setRole("all"); setSortBy("newest"); setRateMin(""); setRateMax(""); setCity(""); setPage(0); }} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600, whiteSpace:"nowrap" }}>
+    🔄 Resetuj filtry
+  </button>
+</div>
+
               <div style={{ fontSize:13, color:C.g400 }}>Znaleziono: <strong style={{ color:C.g800 }}>{filtered.length}</strong> ogłoszeń</div>
             </div>
 
@@ -266,17 +303,14 @@ export default function PanelPracodawcy() {
                           {ad.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
                         </div>
                       </div>
-
                       {ad.skills?.length > 0 && (
                         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
                           {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
                         </div>
                       )}
-
                       {ad.description && (
                         <p style={{ fontSize:13, color:C.g600, lineHeight:1.6, marginBottom:12 }}>{ad.description}</p>
                       )}
-
                       {unlocked[ad.id] ? (
                         <div style={{ background:C.green+"0a", borderRadius:10, padding:"14px 16px", border:`1px solid ${C.green}30` }}>
                           <div style={{ fontSize:11, fontWeight:700, color:C.green, marginBottom:8 }}>✅ Dane kontaktowe odblokowane</div>
@@ -289,7 +323,7 @@ export default function PanelPracodawcy() {
                           <div style={{ fontSize:12, color:C.g400 }}>
                             🔒 <span style={{ fontFamily:"monospace", letterSpacing:2, color:C.g200 }}>Jan K***** · +48 5** *** ***</span>
                           </div>
-                          <button onClick={()=>handleUnlock(ad)} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"8px 16px", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                          <button onClick={()=>setShowUnlock(ad)} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"8px 16px", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
                             🔓 Odblokuj kontakt
                           </button>
                         </div>
@@ -298,11 +332,11 @@ export default function PanelPracodawcy() {
                   ))}
                 </div>
 
-                {filtered.length > PER_PAGE && (
+                {sorted.length > PER_PAGE && (
                   <div style={{ display:"flex", gap:8, justifyContent:"center", alignItems:"center", marginTop:24 }}>
                     <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={page===0} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.g200}`, background:C.white, fontSize:13, cursor:"pointer", color:C.g600, opacity:page===0?0.4:1 }}>← Poprzednia</button>
-                    <span style={{ padding:"8px 16px", fontSize:13, color:C.g600, fontWeight:600 }}>Strona {page+1} z {Math.ceil(filtered.length/PER_PAGE)}</span>
-                    <button onClick={()=>setPage(p=>p+1)} disabled={(page+1)*PER_PAGE>=filtered.length} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.g200}`, background:C.white, fontSize:13, cursor:"pointer", color:C.g600, opacity:(page+1)*PER_PAGE>=filtered.length?0.4:1 }}>Następna →</button>
+                    <span style={{ padding:"8px 16px", fontSize:13, color:C.g600, fontWeight:600 }}>Strona {page+1} z {Math.ceil(sorted.length/PER_PAGE)}</span>
+                    <button onClick={()=>setPage(p=>p+1)} disabled={(page+1)*PER_PAGE>=sorted.length} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.g200}`, background:C.white, fontSize:13, cursor:"pointer", color:C.g600, opacity:(page+1)*PER_PAGE>=sorted.length?0.4:1 }}>Następna →</button>
                   </div>
                 )}
               </div>
@@ -310,7 +344,6 @@ export default function PanelPracodawcy() {
           </div>
         )}
 
-        {/* CONTACTS */}
         {view==="contacts" && (
           <div>
             {Object.keys(unlocked).length === 0 ? (
@@ -351,7 +384,6 @@ export default function PanelPracodawcy() {
           </div>
         )}
 
-        {/* PROFILE */}
         {view==="profile" && (
           <div>
             <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:20 }}>👤 Mój profil</h2>
