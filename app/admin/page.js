@@ -23,6 +23,7 @@ function Badge({ text }) {
     verified:  [C.green,  "Zweryfikowana"],
     worker:    [C.blue,   "Pracownik"],
     employer:  [C.purple, "Pracodawca"],
+    blocked:   [C.red,    "Zablokowany"],
   };
   const [col, label] = map[text] || [C.g400, text];
   return (
@@ -32,13 +33,14 @@ function Badge({ text }) {
   );
 }
 
-function Stat({ icon, label, value, color=C.blue }) {
+function Stat({ icon, label, value, sub, color=C.blue }) {
   return (
     <div style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
         <div>
           <div style={{ fontSize:12, color:C.g400, fontWeight:600, marginBottom:6 }}>{label}</div>
           <div style={{ fontFamily:"Sora,sans-serif", fontSize:26, fontWeight:900, color }}>{value}</div>
+          {sub && <div style={{ fontSize:11, color:C.g400, marginTop:3 }}>{sub}</div>}
         </div>
         <div style={{ fontSize:26 }}>{icon}</div>
       </div>
@@ -61,12 +63,13 @@ function ConfirmModal({ msg, onConfirm, onCancel, danger }) {
   );
 }
 
-function Sidebar({ active, setActive, mobileOpen, setMobileOpen }) {
+function Sidebar({ active, setActive, mobileOpen, setMobileOpen, counts }) {
   const nav = [
     { id:"dashboard", icon:"📊", label:"Dashboard" },
-    { id:"ads",       icon:"📋", label:"Ogłoszenia" },
-    { id:"users",     icon:"👥", label:"Użytkownicy" },
-    { id:"unlocks",   icon:"🔓", label:"Odblokowania" },
+    { id:"ads",       icon:"📋", label:"Ogłoszenia", badge: counts.ads },
+    { id:"users",     icon:"👥", label:"Użytkownicy", badge: counts.users },
+    { id:"unlocks",   icon:"🔓", label:"Odblokowania", badge: counts.unlocks },
+    { id:"stats",     icon:"📈", label:"Statystyki" },
   ];
 
   const content = (
@@ -93,7 +96,8 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen }) {
             borderLeft: active===item.id?`3px solid ${C.blue}`:"3px solid transparent",
           }}>
             <span style={{ fontSize:18 }}>{item.icon}</span>
-            <span style={{ fontWeight:active===item.id?700:400, fontSize:14 }}>{item.label}</span>
+            <span style={{ fontWeight:active===item.id?700:400, fontSize:14, flex:1 }}>{item.label}</span>
+            {item.badge > 0 && <span style={{ background:C.blue, color:"#fff", borderRadius:10, padding:"1px 7px", fontSize:10, fontWeight:800 }}>{item.badge}</span>}
           </button>
         ))}
       </nav>
@@ -167,11 +171,13 @@ function Dashboard() {
 
   return (
     <div style={{ padding:"20px 16px" }}>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12, marginBottom:24 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:24 }}>
         <Stat icon="📋" label="Ogłoszenia" value={stats.ads} color={C.blue} />
         <Stat icon="🔓" label="Odblokowania" value={stats.unlocks} color={C.green} />
-        <Stat icon="👷" label="Pracownicy" value={stats.workers} color={C.purple} />
+        <Stat icon="👥" label="Użytkownicy" value={stats.users} color={C.purple} />
+        <Stat icon="👷" label="Pracownicy" value={stats.workers} color={C.blue} />
         <Stat icon="🏢" label="Pracodawcy" value={stats.employers} color={C.orange} />
+        <Stat icon="💰" label="Przychód (demo)" value="—" sub="Stripe nie wdrożony" color={C.green} />
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
@@ -206,6 +212,7 @@ function AdsPanel() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [confirm, setConfirm] = useState(null);
+  const [editAd, setEditAd] = useState(null);
 
   useEffect(()=>{
     async function load() {
@@ -222,6 +229,30 @@ function AdsPanel() {
     setConfirm(null);
   }
 
+  async function saveEditAd() {
+    const { error } = await supabase.from("ads").update({
+      role: editAd.role,
+      city: editAd.city,
+      region: editAd.region,
+      rate_from: editAd.rate_from,
+      rate_to: editAd.rate_to,
+    }).eq("id", editAd.id);
+    if (!error) {
+      setAds(prev=>prev.map(a=>a.id===editAd.id?{...a,...editAd}:a));
+      setEditAd(null);
+    }
+  }
+
+  function exportCSV() {
+    const headers = ["ID","Rola","Miasto","Region","Stawka od","Stawka do","Pracownik","Email","Data"];
+    const rows = ads.map(a=>[a.id, a.role, a.city, a.region, a.rate_from, a.rate_to, a.profiles?.name, a.profiles?.email, new Date(a.created_at).toLocaleDateString("pl-PL")]);
+    const csv = [headers, ...rows].map(r=>r.join(";")).join("\n");
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ogloszenia.csv"; a.click();
+  }
+
   const filtered = ads.filter(a =>
     !search || a.role?.toLowerCase().includes(search.toLowerCase()) || a.city?.toLowerCase().includes(search.toLowerCase())
   );
@@ -232,9 +263,40 @@ function AdsPanel() {
     <div style={{ padding:"16px" }}>
       {confirm && <ConfirmModal msg={confirm.msg} danger onConfirm={confirm.onConfirm} onCancel={()=>setConfirm(null)} />}
 
+      {editAd && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setEditAd(null)}>
+          <div style={{ background:C.white, borderRadius:16, padding:28, maxWidth:440, width:"100%" }} onClick={e=>e.stopPropagation()}>
+            <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:17, color:C.g800, marginBottom:20 }}>✏️ Edytuj ogłoszenie</h3>
+            {[["Rola","role"],["Miasto","city"],["Region","region"]].map(([label,key])=>(
+              <div key={key} style={{ marginBottom:12 }}>
+                <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>{label}</label>
+                <input value={editAd[key]||""} onChange={e=>setEditAd(v=>({...v,[key]:e.target.value}))}
+                  style={{ width:"100%", padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", color:C.g800 }} />
+              </div>
+            ))}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+              {[["Stawka od","rate_from"],["Stawka do","rate_to"]].map(([label,key])=>(
+                <div key={key}>
+                  <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>{label}</label>
+                  <input type="number" value={editAd[key]||""} onChange={e=>setEditAd(v=>({...v,[key]:e.target.value}))}
+                    style={{ width:"100%", padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", color:C.g800 }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={()=>setEditAd(null)} style={{ flex:1, padding:"10px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>Anuluj</button>
+              <button onClick={saveEditAd} style={{ flex:1, padding:"10px", borderRadius:8, border:"none", background:C.blue, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>Zapisz</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom:16, display:"flex", gap:10, alignItems:"center" }}>
         <input placeholder="🔍 Szukaj ogłoszenia..." value={search} onChange={e=>setSearch(e.target.value)}
           style={{ flex:1, padding:"10px 14px", borderRadius:10, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.white, color:C.g800 }} />
+        <button onClick={exportCSV} style={{ padding:"10px 16px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600, whiteSpace:"nowrap" }}>
+          📥 Eksport CSV
+        </button>
         <span style={{ fontSize:13, color:C.g400 }}>{filtered.length} ogłoszeń</span>
       </div>
 
@@ -244,7 +306,7 @@ function AdsPanel() {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
               <div>
                 <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:15, color:C.g800, marginBottom:2 }}>{ad.role}</div>
-                <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.category}</div>
+                <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.category} · 👁 {ad.views||0} wyświetleń</div>
               </div>
               <div style={{ textAlign:"right" }}>
                 <div style={{ fontWeight:700, fontSize:14, color:C.navy }}>{ad.rate_from}{ad.rate_to?`–${ad.rate_to}`:""} zł/h</div>
@@ -260,6 +322,8 @@ function AdsPanel() {
               </div>
             )}
             <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>setEditAd({...ad})}
+                style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.blue+"10", color:C.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>✏️ Edytuj</button>
               <button onClick={()=>setConfirm({ msg:`Usunąć ogłoszenie "${ad.role}"?`, onConfirm:()=>deleteAd(ad.id) })}
                 style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń</button>
             </div>
@@ -292,8 +356,29 @@ function UsersPanel() {
     setConfirm(null);
   }
 
+  async function blockUser(id) {
+    await supabase.from("profiles").update({ blocked: true }).eq("id", id);
+    setUsers(prev=>prev.map(u=>u.id===id?{...u,blocked:true}:u));
+    setConfirm(null);
+  }
+
+  async function unblockUser(id) {
+    await supabase.from("profiles").update({ blocked: false }).eq("id", id);
+    setUsers(prev=>prev.map(u=>u.id===id?{...u,blocked:false}:u));
+  }
+
+  function exportCSV() {
+    const headers = ["ID","Imię","Email","Telefon","Typ","NIP","Dołączył","Zablokowany"];
+    const rows = users.map(u=>[u.id, u.name, u.email, u.phone, u.type, u.nip||"", new Date(u.created_at).toLocaleDateString("pl-PL"), u.blocked?"Tak":"Nie"]);
+    const csv = [headers, ...rows].map(r=>r.join(";")).join("\n");
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "uzytkownicy.csv"; a.click();
+  }
+
   const filtered = users.filter(u =>
-    (filter==="all" || u.type===filter) &&
+    (filter==="all" || (filter==="blocked" ? u.blocked : u.type===filter)) &&
     (!search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -306,30 +391,43 @@ function UsersPanel() {
       <div style={{ marginBottom:14, display:"flex", gap:10 }}>
         <input placeholder="🔍 Szukaj użytkownika..." value={search} onChange={e=>setSearch(e.target.value)}
           style={{ flex:1, padding:"10px 14px", borderRadius:10, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.white, color:C.g800 }} />
+        <button onClick={exportCSV} style={{ padding:"10px 16px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600, whiteSpace:"nowrap" }}>
+          📥 Eksport CSV
+        </button>
       </div>
 
       <div style={{ display:"flex", gap:6, marginBottom:16 }}>
-        {[["all","Wszyscy"],["worker","Pracownicy"],["employer","Pracodawcy"]].map(([id,label])=>(
+        {[["all","Wszyscy"],["worker","Pracownicy"],["employer","Pracodawcy"],["blocked","Zablokowani"]].map(([id,label])=>(
           <button key={id} onClick={()=>setFilter(id)} style={{ padding:"7px 14px", borderRadius:20, border:`1.5px solid ${filter===id?C.blue:C.g200}`, background:filter===id?C.blue:C.white, color:filter===id?"#fff":C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>{label}</button>
         ))}
       </div>
 
       <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
         {filtered.map(u=>(
-          <div key={u.id} style={{ background:C.white, borderRadius:14, border:`1px solid ${C.g100}`, padding:"16px", boxShadow:"0 2px 8px rgba(0,0,0,0.03)" }}>
+          <div key={u.id} style={{ background:C.white, borderRadius:14, border:u.blocked?`1.5px solid ${C.red}30`:`1px solid ${C.g100}`, padding:"16px", boxShadow:"0 2px 8px rgba(0,0,0,0.03)" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
               <div>
                 <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:14, color:C.g800, marginBottom:2 }}>{u.name}</div>
                 <div style={{ fontSize:12, color:C.g400 }}>✉️ {u.email} · 📞 {u.phone}</div>
               </div>
-              <Badge text={u.type} />
+              <div style={{ display:"flex", gap:6 }}>
+                <Badge text={u.type} />
+                {u.blocked && <Badge text="blocked" />}
+              </div>
             </div>
             <div style={{ fontSize:12, color:C.g600, marginBottom:10 }}>
               📅 Dołączył: {new Date(u.created_at).toLocaleDateString("pl-PL")}
               {u.nip && ` · NIP: ${u.nip}`}
             </div>
             <div style={{ display:"flex", gap:8 }}>
-              <button onClick={()=>setConfirm({ msg:`Usunąć konto użytkownika "${u.name}"?`, onConfirm:()=>deleteUser(u.id) })}
+              {u.blocked ? (
+                <button onClick={()=>unblockUser(u.id)}
+                  style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.green+"10", color:C.green, fontSize:12, fontWeight:600, cursor:"pointer" }}>✅ Odblokuj</button>
+              ) : (
+                <button onClick={()=>setConfirm({ msg:`Zablokować konto "${u.name}"?`, onConfirm:()=>blockUser(u.id) })}
+                  style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.orange+"10", color:C.orange, fontSize:12, fontWeight:600, cursor:"pointer" }}>🔒 Zablokuj</button>
+              )}
+              <button onClick={()=>setConfirm({ msg:`Usunąć konto "${u.name}"? Ta akcja jest nieodwracalna!`, onConfirm:()=>deleteUser(u.id) })}
                 style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń</button>
             </div>
           </div>
@@ -355,11 +453,26 @@ function UnlocksPanel() {
     load();
   },[]);
 
+  function exportCSV() {
+    const headers = ["ID","Firma","Email","Ogłoszenie ID","Data"];
+    const rows = unlocks.map(u=>[u.id, u.profiles?.name, u.profiles?.email, u.ad_id, new Date(u.created_at).toLocaleDateString("pl-PL")]);
+    const csv = [headers, ...rows].map(r=>r.join(";")).join("\n");
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "odblokowania.csv"; a.click();
+  }
+
   if(loading) return <div style={{ padding:40, textAlign:"center", color:C.g400 }}>Ładowanie...</div>;
 
   return (
     <div style={{ padding:"16px" }}>
-      <div style={{ marginBottom:16, fontSize:13, color:C.g400 }}>Łącznie: <strong style={{ color:C.g800 }}>{unlocks.length}</strong> odblokowań</div>
+      <div style={{ marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ fontSize:13, color:C.g400 }}>Łącznie: <strong style={{ color:C.g800 }}>{unlocks.length}</strong> odblokowań</div>
+        <button onClick={exportCSV} style={{ padding:"10px 16px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600 }}>
+          📥 Eksport CSV
+        </button>
+      </div>
       <div style={{ background:C.white, borderRadius:14, border:`1px solid ${C.g100}`, overflow:"hidden" }}>
         {unlocks.length === 0 ? (
           <div style={{ padding:40, textAlign:"center", color:C.g400 }}>Brak odblokowań</div>
@@ -377,21 +490,104 @@ function UnlocksPanel() {
   );
 }
 
+function StatsPanel() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(()=>{
+    async function load() {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const weekAgo = new Date(now - 7*24*60*60*1000).toISOString();
+      const monthAgo = new Date(now - 30*24*60*60*1000).toISOString();
+
+      const [
+        { count: adsToday },
+        { count: adsWeek },
+        { count: adsMonth },
+        { count: usersToday },
+        { count: usersWeek },
+        { count: unlocksToday },
+        { count: unlocksWeek },
+        { data: topAds },
+      ] = await Promise.all([
+        supabase.from("ads").select("*", { count:"exact", head:true }).gte("created_at", today),
+        supabase.from("ads").select("*", { count:"exact", head:true }).gte("created_at", weekAgo),
+        supabase.from("ads").select("*", { count:"exact", head:true }).gte("created_at", monthAgo),
+        supabase.from("profiles").select("*", { count:"exact", head:true }).gte("created_at", today),
+        supabase.from("profiles").select("*", { count:"exact", head:true }).gte("created_at", weekAgo),
+        supabase.from("unlocks").select("*", { count:"exact", head:true }).gte("created_at", today),
+        supabase.from("unlocks").select("*", { count:"exact", head:true }).gte("created_at", weekAgo),
+        supabase.from("ads").select("role, city, region, views").order("views", { ascending:false }).limit(5),
+      ]);
+
+      setStats({ adsToday, adsWeek, adsMonth, usersToday, usersWeek, unlocksToday, unlocksWeek, topAds: topAds||[] });
+      setLoading(false);
+    }
+    load();
+  },[]);
+
+  if(loading) return <div style={{ padding:40, textAlign:"center", color:C.g400 }}>Ładowanie...</div>;
+
+  return (
+    <div style={{ padding:"16px" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:24 }}>
+        <Stat icon="📋" label="Nowe ogłoszenia dziś" value={stats.adsToday||0} color={C.blue} />
+        <Stat icon="📋" label="Nowe ogłoszenia (7 dni)" value={stats.adsWeek||0} color={C.blue} />
+        <Stat icon="📋" label="Nowe ogłoszenia (30 dni)" value={stats.adsMonth||0} color={C.blue} />
+        <Stat icon="👥" label="Nowi użytkownicy dziś" value={stats.usersToday||0} color={C.purple} />
+        <Stat icon="👥" label="Nowi użytkownicy (7 dni)" value={stats.usersWeek||0} color={C.purple} />
+        <Stat icon="🔓" label="Odblokowania dziś" value={stats.unlocksToday||0} color={C.green} />
+      </div>
+
+      <div style={{ background:C.white, borderRadius:14, border:`1px solid ${C.g100}`, overflow:"hidden" }}>
+        <div style={{ padding:"14px 18px", borderBottom:`1px solid ${C.g100}`, fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:14, color:C.g800 }}>
+          🏆 Najpopularniejsze ogłoszenia (wg wyświetleń)
+        </div>
+        {stats.topAds.length === 0 ? (
+          <div style={{ padding:24, textAlign:"center", color:C.g400, fontSize:13 }}>Brak danych</div>
+        ) : stats.topAds.map((ad,i)=>(
+          <div key={i} style={{ padding:"12px 18px", borderBottom:i<stats.topAds.length-1?`1px solid ${C.g100}`:"none", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <div style={{ fontWeight:600, fontSize:13, color:C.g800 }}>{ad.role}</div>
+              <div style={{ fontSize:11, color:C.g400 }}>{ad.city}, {ad.region}</div>
+            </div>
+            <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.blue }}>👁 {ad.views||0}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [active, setActive] = useState("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [counts, setCounts] = useState({ ads:0, users:0, unlocks:0 });
 
   useEffect(()=>{
     if(status==="unauthenticated") router.push("/admin/login");
   },[status]);
 
+  useEffect(()=>{
+    async function loadCounts() {
+      const [{ count: ads }, { count: users }, { count: unlocks }] = await Promise.all([
+        supabase.from("ads").select("*", { count:"exact", head:true }),
+        supabase.from("profiles").select("*", { count:"exact", head:true }),
+        supabase.from("unlocks").select("*", { count:"exact", head:true }),
+      ]);
+      setCounts({ ads:ads||0, users:users||0, unlocks:unlocks||0 });
+    }
+    if(session) loadCounts();
+  },[session]);
+
   if(status==="loading"||!session) return (
     <div style={{ background:"#0F172A", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:16 }}>Ładowanie...</div>
   );
 
-  const titles = { dashboard:"Dashboard", ads:"Ogłoszenia", users:"Użytkownicy", unlocks:"Odblokowania" };
+  const titles = { dashboard:"Dashboard", ads:"Ogłoszenia", users:"Użytkownicy", unlocks:"Odblokowania", stats:"Statystyki" };
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:"'DM Sans',sans-serif" }}>
@@ -402,7 +598,7 @@ export default function App() {
         input,select,button { font-family:inherit; }
         ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:4px; }
       `}</style>
-      <Sidebar active={active} setActive={setActive} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Sidebar active={active} setActive={setActive} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} counts={counts} />
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}>
         <Topbar title={titles[active]} setMobileOpen={setMobileOpen} />
         <div style={{ flex:1, overflowY:"auto" }}>
@@ -410,6 +606,7 @@ export default function App() {
           {active==="ads"       && <AdsPanel />}
           {active==="users"     && <UsersPanel />}
           {active==="unlocks"   && <UnlocksPanel />}
+          {active==="stats"     && <StatsPanel />}
         </div>
       </div>
     </div>
