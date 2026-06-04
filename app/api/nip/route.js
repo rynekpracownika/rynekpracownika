@@ -1,4 +1,13 @@
+import { nipLimiter } from "../../../lib/ratelimit";
+
 export async function GET(request) {
+  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const { success } = await nipLimiter.limit(ip);
+
+  if (!success) {
+    return Response.json({ error: "Za dużo zapytań. Spróbuj za chwilę.", valid: false }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const nip = searchParams.get("nip")?.replace(/[-\s]/g, "");
 
