@@ -256,6 +256,16 @@ export default function PanelPracownika() {
     setAds(prev => prev.filter(a => a.id !== id));
   }
 
+  async function handleExtendAd(id) {
+  if (!confirm("Przedłużyć ogłoszenie o 30 dni?")) return;
+  const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase.from("ads").update({ expires_at: newExpiry }).eq("id", id);
+  if (!error) {
+    setAds(prev => prev.map(a => a.id === id ? { ...a, expires_at: newExpiry } : a));
+    alert("✅ Ogłoszenie przedłużone o 30 dni!");
+  }
+}
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/");
@@ -520,8 +530,9 @@ export default function PanelPracownika() {
                       </div>
                     )}
                     <div style={{ display:"flex", gap:8 }}>
-                      <button onClick={()=>handleEditAd(ad)} style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.blue+"10", color:C.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>✏️ Edytuj</button>
-                      <button onClick={()=>handleDeleteAd(ad.id)} style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń</button>
+                     <button onClick={()=>handleEditAd(ad)} style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.blue+"10", color:C.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>✏️ Edytuj</button>
+                     <button onClick={()=>handleExtendAd(ad.id)} style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.green+"10", color:C.green, fontSize:12, fontWeight:600, cursor:"pointer" }}>🔄 Przedłuż 30 dni</button>
+                     <button onClick={()=>handleDeleteAd(ad.id)} style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń</button>
                     </div>
                   </div>
                 ))}
