@@ -740,8 +740,9 @@ function Footer({ setView }) {
                 else if(l==="FAQ") window.location.href="/howitworks";
                 else if(l==="Ranking firm") window.location.href="/ranking";
                 else if(l==="Weryfikacja NIP") window.location.href="/dla-pracodawcy";
-                else if(l==="O nas") window.location.href="/kontakt";
-                else if(l==="Blog") window.location.href="/kontakt";
+                else if(l==="O nas") window.location.href="/o-nas";
+                else if(l==="Blog") window.location.href="/blog";
+              
               }} style={{ fontSize:12, marginBottom:7, cursor:"pointer" }}>{l}</div>
               ))}
             </div>
