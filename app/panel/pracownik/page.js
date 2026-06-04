@@ -42,6 +42,96 @@ function AdStatusBadge({ expiresAt }) {
   );
 }
 
+function ProfileEdit({ user, profile, setProfile }) {
+  const [phone, setPhone] = useState(profile?.phone || "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPassword2, setNewPassword2] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [phoneMsg, setPhoneMsg] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState("");
+
+  async function handleSavePhone() {
+    if (!phone) { setPhoneMsg("Podaj numer telefonu!"); return; }
+    setSavingPhone(true);
+    const { error } = await supabase.from("profiles").update({ phone }).eq("id", user.id);
+    if (!error) {
+      setProfile(p => ({ ...p, phone }));
+      setPhoneMsg("✅ Telefon zaktualizowany!");
+    } else {
+      setPhoneMsg("❌ Błąd zapisu!");
+    }
+    setSavingPhone(false);
+  }
+
+  async function handleSavePassword() {
+    if (!newPassword || !newPassword2) { setPasswordMsg("Wypełnij wszystkie pola!"); return; }
+    if (newPassword !== newPassword2) { setPasswordMsg("Hasła nie są identyczne!"); return; }
+    if (newPassword.length < 6) { setPasswordMsg("Hasło musi mieć min. 6 znaków!"); return; }
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (!error) {
+      setPasswordMsg("✅ Hasło zmienione!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setNewPassword2("");
+    } else {
+      setPasswordMsg("❌ Błąd zmiany hasła!");
+    }
+    setSavingPassword(false);
+  }
+
+  const C2 = {
+    blue:"#1A73E8", navy:"#0D47A1", bg:"#F5F7FA",
+    white:"#FFFFFF", g200:"#CBD5E1", g600:"#475569",
+    g800:"#1E293B", green:"#16A34A", red:"#DC2626",
+  };
+
+  return (
+    <div>
+      {/* Zmiana telefonu */}
+      <div style={{ marginBottom:28, paddingBottom:28, borderBottom:`1px solid #E8ECF0` }}>
+        <div style={{ fontSize:13, fontWeight:700, color:C2.g600, marginBottom:12, textTransform:"uppercase", letterSpacing:0.5 }}>Zmień numer telefonu</div>
+        <input
+          type="tel"
+          placeholder="+48 500 000 000"
+          value={phone}
+          onChange={e=>{ setPhone(e.target.value); setPhoneMsg(""); }}
+          style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C2.g200}`, fontSize:13, outline:"none", background:C2.bg, color:C2.g800, marginBottom:10 }}
+        />
+        {phoneMsg && <div style={{ fontSize:13, color:phoneMsg.includes("✅")?C2.green:C2.red, marginBottom:10 }}>{phoneMsg}</div>}
+        <button onClick={handleSavePhone} disabled={savingPhone} style={{ background:`linear-gradient(135deg,${C2.blue},${C2.navy})`, color:"#fff", border:"none", padding:"10px 20px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>
+          {savingPhone ? "Zapisywanie..." : "Zapisz telefon"}
+        </button>
+      </div>
+
+      {/* Zmiana hasła */}
+      <div>
+        <div style={{ fontSize:13, fontWeight:700, color:C2.g600, marginBottom:12, textTransform:"uppercase", letterSpacing:0.5 }}>Zmień hasło</div>
+        {[
+          ["Nowe hasło", newPassword, setNewPassword],
+          ["Powtórz nowe hasło", newPassword2, setNewPassword2],
+        ].map(([label, val, setter])=>(
+          <div key={label} style={{ marginBottom:10 }}>
+            <label style={{ fontSize:11, fontWeight:700, color:C2.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>{label}</label>
+            <input
+              type="password"
+              value={val}
+              onChange={e=>{ setter(e.target.value); setPasswordMsg(""); }}
+              style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C2.g200}`, fontSize:13, outline:"none", background:C2.bg, color:C2.g800 }}
+            />
+          </div>
+        ))}
+        {passwordMsg && <div style={{ fontSize:13, color:passwordMsg.includes("✅")?C2.green:C2.red, marginBottom:10 }}>{passwordMsg}</div>}
+        <button onClick={handleSavePassword} disabled={savingPassword} style={{ background:`linear-gradient(135deg,${C2.blue},${C2.navy})`, color:"#fff", border:"none", padding:"10px 20px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>
+          {savingPassword ? "Zapisywanie..." : "Zmień hasło"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PanelPracownika() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -198,7 +288,7 @@ export default function PanelPracownika() {
 
         {/* TABS */}
         <div style={{ display:"flex", gap:8, marginBottom:28, flexWrap:"wrap" }}>
-          {[["dashboard","📊 Dashboard"],["addad", editingId?"✏️ Edytuj ogłoszenie":"➕ Dodaj ogłoszenie"],["myads","📋 Moje ogłoszenia"],["stats","📈 Statystyki"]].map(([id,label])=>(
+          {[["dashboard","📊 Dashboard"],["addad", editingId?"✏️ Edytuj ogłoszenie":"➕ Dodaj ogłoszenie"],["myads","📋 Moje ogłoszenia"],["stats","📈 Statystyki"],["profile","👤 Profil"]].map(([id,label])=>(
             <button key={id} onClick={()=>{setView(id);setSaved(false);if(id!=="addad"){setEditingId(null);setForm({cat:"",role:"",exp:"",rateFrom:"",rateTo:"",region:"",city:"",avail:"",contract:[],remote:false,skills:"",desc:""});setFormStep(1);}}} style={{
               padding:"9px 18px", borderRadius:10, border:`1.5px solid ${view===id?C.blue:C.g200}`,
               background:view===id?C.blue:C.white, color:view===id?"#fff":C.g600,
@@ -471,6 +561,23 @@ export default function PanelPracownika() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {view==="profile" && (
+          <div>
+            <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:20 }}>👤 Mój profil</h2>
+            <div style={{ background:C.white, borderRadius:16, padding:32, border:`1px solid ${C.g100}`, boxShadow:"0 4px 20px rgba(26,115,232,0.06)", maxWidth:500 }}>
+              
+              <div style={{ marginBottom:28, paddingBottom:28, borderBottom:`1px solid ${C.g100}` }}>
+                <div style={{ fontSize:13, fontWeight:700, color:C.g600, marginBottom:16, textTransform:"uppercase", letterSpacing:0.5 }}>Dane konta</div>
+                <div style={{ fontSize:14, color:C.g800, marginBottom:8 }}>👤 <strong>{profile?.name}</strong></div>
+                <div style={{ fontSize:14, color:C.g800, marginBottom:8 }}>✉️ {profile?.email}</div>
+                <div style={{ fontSize:14, color:C.g800 }}>📞 {profile?.phone || "Brak telefonu"}</div>
+              </div>
+
+              <ProfileEdit user={user} profile={profile} setProfile={setProfile} />
+            </div>
           </div>
         )}
 
