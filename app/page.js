@@ -180,7 +180,7 @@ function Navbar({ view, setView }) {
   );
 }
 
-function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0 }) {
+function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, profile, setShowAuthModal }) {
   const stats = [
     { n:adsCount>0?`${adsCount}`:"0", t:"Aktywnych ogłoszeń" },
     { n:"16 woj.", t:"Zasięg regionalny" },
@@ -205,7 +205,7 @@ function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0 }) {
             Elektryk, kierowca, spawacz, kucharz — dodaj ogłoszenie ze swoją stawką i regionem.
           </p>
           <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
-            <button onClick={()=>setView("addad")} style={{ background:"#fff", color:C.navy, border:"none", padding:"13px 30px", borderRadius:10, fontSize:14, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.18)" }}>📝 Dodaj ogłoszenie — to GRATIS</button>
+            <button onClick={()=>{ if(user) { window.location.href="/panel/pracownik"; } else { setShowAuthModal(true); } }} style={{ background:"#fff", color:C.navy, border:"none", padding:"13px 30px", borderRadius:10, fontSize:14, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.18)" }}>📝 Dodaj ogłoszenie — to GRATIS</button>
             <button onClick={()=>setView("ads")} style={{ background:"rgba(255,255,255,0.12)", color:"#fff", border:"1.5px solid rgba(255,255,255,0.28)", padding:"13px 28px", borderRadius:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>🔍 Szukam pracowników</button>
           </div>
         </div>
@@ -760,8 +760,10 @@ export default function App() {
   const [view, setView] = useState("home");
   const [realAds, setRealAds] = useState([]);
   const [activeCat, setActiveCat] = useState("all");
-
   const [adsCount, setAdsCount] = useState(0);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
 useEffect(() => {
   async function loadAds() {
@@ -770,6 +772,13 @@ useEffect(() => {
 
     const { count } = await supabase.from("ads").select("*", { count:"exact", head:true }).eq("status","active");
     if(count) setAdsCount(count);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if(user) {
+      setUser(user);
+      const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      if(prof) setProfile(prof);
+    }
   }
   loadAds();
 }, []);
@@ -804,9 +813,25 @@ useEffect(() => {
           .hero-padding { padding:40px 20px 56px; }
         }
       `}</style>
+
+      {showAuthModal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowAuthModal(false)}>
+          <div style={{ background:"#fff", borderRadius:18, padding:36, maxWidth:400, width:"100%", textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:48, marginBottom:16 }}>👷</div>
+            <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:22, color:"#1E293B", marginBottom:8 }}>Dodaj ogłoszenie</h3>
+            <p style={{ fontSize:14, color:"#475569", marginBottom:28, lineHeight:1.6 }}>Zaloguj się lub zarejestruj żeby dodać ogłoszenie ze swoją stawką.</p>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              <button onClick={()=>window.location.href="/logowanie"} style={{ width:"100%", background:`linear-gradient(135deg,#1A73E8,#0D47A1)`, color:"#fff", border:"none", padding:"13px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>Mam już konto → Zaloguj się</button>
+              <button onClick={()=>window.location.href="/rejestracja?type=worker"} style={{ width:"100%", background:"transparent", color:"#1A73E8", border:"1.5px solid #1A73E8", padding:"13px", borderRadius:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Nowy użytkownik → Zarejestruj się</button>
+            </div>
+            <button onClick={()=>setShowAuthModal(false)} style={{ marginTop:14, background:"transparent", border:"none", color:"#94A3B8", fontSize:12, cursor:"pointer" }}>Anuluj</button>
+          </div>
+        </div>
+      )}
+
       <Navbar view={view} setView={setView} />
       <main>
-        {view==="home" && <HomeView setView={setView} setActiveCat={setActiveCat} ads={realAds} adsCount={adsCount} />}
+        {view==="home"       && <HomeView setView={setView} setActiveCat={setActiveCat} ads={realAds} adsCount={adsCount} user={user} profile={profile} setShowAuthModal={setShowAuthModal} />}
         {view==="ads"        && <AdsView ads={realAds} initialCat={activeCat} />}
         {view==="addad"      && <AddAdView setView={setView} />}
         {view==="ranking"    && <RankingView />}
