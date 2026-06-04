@@ -39,6 +39,14 @@ const ROLES = {
   biuro:      ["Księgowa","Asystentka","HR","Recepcjonistka"],
 };
 
+const STATUSES = [
+  { id:"none", label:"Brak statusu", color:"#94A3B8" },
+  { id:"call", label:"📞 Do zadzwonienia", color:"#1A73E8" },
+  { id:"talking", label:"🔄 W trakcie rozmów", color:"#EA580C" },
+  { id:"hired", label:"✅ Zatrudniony", color:"#16A34A" },
+  { id:"rejected", label:"❌ Odrzucony", color:"#DC2626" },
+];
+
 function ProfileEdit({ user, profile, setProfile }) {
   const [phone, setPhone] = useState(profile?.phone || "");
   const [newPassword, setNewPassword] = useState("");
@@ -111,6 +119,11 @@ export default function PanelPracodawcy() {
   const [profile, setProfile] = useState(null);
   const [ads, setAds] = useState([]);
   const [unlocked, setUnlocked] = useState({});
+  const [favorites, setFavorites] = useState({});
+  const [notes, setNotes] = useState({});
+  const [statuses, setStatuses] = useState({});
+  const [editingNote, setEditingNote] = useState(null);
+  const [noteText, setNoteText] = useState("");
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("search");
   const [search, setSearch] = useState("");
@@ -142,10 +155,38 @@ export default function PanelPracodawcy() {
         unlocksData.forEach(u => { map[u.ad_id] = true; });
         setUnlocked(map);
       }
+      // Wczytaj ulubione, notatki i statusy z localStorage
+      const savedFavorites = JSON.parse(localStorage.getItem(`favorites_${user.id}`) || "{}");
+      const savedNotes = JSON.parse(localStorage.getItem(`notes_${user.id}`) || "{}");
+      const savedStatuses = JSON.parse(localStorage.getItem(`statuses_${user.id}`) || "{}");
+      setFavorites(savedFavorites);
+      setNotes(savedNotes);
+      setStatuses(savedStatuses);
       setLoading(false);
     }
     load();
   }, []);
+
+  function toggleFavorite(adId) {
+    const newFav = { ...favorites, [adId]: !favorites[adId] };
+    if (!newFav[adId]) delete newFav[adId];
+    setFavorites(newFav);
+    localStorage.setItem(`favorites_${user.id}`, JSON.stringify(newFav));
+  }
+
+  function saveNote(adId) {
+    const newNotes = { ...notes, [adId]: noteText };
+    setNotes(newNotes);
+    localStorage.setItem(`notes_${user.id}`, JSON.stringify(newNotes));
+    setEditingNote(null);
+    setNoteText("");
+  }
+
+  function saveStatus(adId, status) {
+    const newStatuses = { ...statuses, [adId]: status };
+    setStatuses(newStatuses);
+    localStorage.setItem(`statuses_${user.id}`, JSON.stringify(newStatuses));
+  }
 
   const filtered = ads.filter(a => {
     const q = search.toLowerCase();
@@ -177,7 +218,6 @@ export default function PanelPracodawcy() {
 
   async function confirmUnlock(ad) {
     const { error } = await supabase.from("unlocks").upsert({ employer_id: user.id, ad_id: ad.id }, { onConflict: "employer_id,ad_id" });
-    console.log("unlock error:", error);
     setUnlocked(u => ({...u, [ad.id]: true}));
     setShowUnlock(null);
     setView("contacts");
@@ -191,13 +231,29 @@ export default function PanelPracodawcy() {
 
   const inputStyle = { padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:C.g800 };
   const selectStyle = { padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", cursor:"pointer", color:C.g800 };
-
   const availableRoles = cat !== "all" ? ROLES[cat] || [] : [];
+  const favoriteAds = ads.filter(a => favorites[a.id]);
+  const unlockedAds = ads.filter(a => unlocked[a.id]);
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
 
+      {/* Modal notatki */}
+      {editingNote && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:400, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setEditingNote(null)}>
+          <div style={{ background:C.white, borderRadius:16, padding:28, maxWidth:420, width:"100%" }} onClick={e=>e.stopPropagation()}>
+            <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:17, color:C.g800, marginBottom:16 }}>📝 Notatka</h3>
+            <textarea rows={4} value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Wpisz notatkę o kandydacie..." style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", resize:"none", lineHeight:1.6, color:C.g800 }} />
+            <div style={{ display:"flex", gap:10, marginTop:16 }}>
+              <button onClick={()=>setEditingNote(null)} style={{ flex:1, padding:"10px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>Anuluj</button>
+              <button onClick={()=>saveNote(editingNote)} style={{ flex:1, padding:"10px", borderRadius:8, border:"none", background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>Zapisz</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal odblokowania */}
       {showUnlock && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowUnlock(null)}>
           <div style={{ background:C.white, borderRadius:18, padding:32, maxWidth:380, width:"100%" }} onClick={e=>e.stopPropagation()}>
@@ -222,6 +278,7 @@ export default function PanelPracodawcy() {
         </div>
       )}
 
+      {/* TOPBAR */}
       <div style={{ background:C.white, borderBottom:`1px solid ${C.g100}`, padding:"0 20px", height:56, display:"flex", alignItems:"center", gap:12, position:"sticky", top:0, zIndex:100, boxShadow:"0 1px 8px rgba(0,0,0,0.05)" }}>
         <div onClick={()=>router.push("/")} style={{ cursor:"pointer", fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
           rynek<span style={{ color:C.blue }}>pracownika</span>
@@ -233,50 +290,50 @@ export default function PanelPracodawcy() {
 
       <div style={{ maxWidth:1000, margin:"0 auto", padding:"32px 20px" }}>
 
-        <div style={{ display:"flex", gap:8, marginBottom:28 }}>
-          {[["search","🔍 Szukaj pracowników"],["contacts","📞 Moje kontakty"],["profile","👤 Profil"]].map(([id,label])=>(
+        {/* TABS */}
+        <div style={{ display:"flex", gap:8, marginBottom:28, flexWrap:"wrap" }}>
+          {[
+            ["search","🔍 Szukaj pracowników"],
+            ["contacts",`📞 Moje kontakty${unlockedAds.length>0?` (${unlockedAds.length})`:""}`],
+            ["favorites",`⭐ Ulubione${favoriteAds.length>0?` (${favoriteAds.length})`:""}`],
+            ["profile","👤 Profil"],
+          ].map(([id,label])=>(
             <button key={id} onClick={()=>setView(id)} style={{ padding:"9px 18px", borderRadius:10, border:`1.5px solid ${view===id?C.blue:C.g200}`, background:view===id?C.blue:C.white, color:view===id?"#fff":C.g600, fontSize:13, fontWeight:600, cursor:"pointer" }}>{label}</button>
           ))}
         </div>
 
+        {/* SEARCH */}
         {view==="search" && (
           <div>
             <div style={{ background:C.white, borderRadius:14, padding:"16px 20px", border:`1px solid ${C.g100}`, marginBottom:20, boxShadow:"0 2px 10px rgba(26,115,232,0.05)" }}>
-              
-              {/* Wiersz 1 — wyszukiwarka + województwo + miasto */}
-<div style={{ display:"grid", gridTemplateColumns:"1fr 180px 180px", gap:10, marginBottom:10 }}>
-  <input placeholder="🔍 Zawód, umiejętność..." value={search} onChange={e=>{ setSearch(e.target.value); setPage(0); }} style={inputStyle} />
-  <select value={region} onChange={e=>{ setRegion(e.target.value); setCity(""); setPage(0); }} style={selectStyle}>
-    {REGIONS.map(r=><option key={r}>{r}</option>)}
-  </select>
-  <CityAutocomplete value={city} onChange={v=>{ setCity(v); setPage(0); }} region={region==="Cała Polska" ? "" : region} />
-</div>
-
-              {/* Wiersz 2 — kategoria + zawód + sortowanie */}
-<div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
-  <select value={cat} onChange={e=>{ setCat(e.target.value); setRole("all"); setPage(0); }} style={selectStyle}>
-    {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
-  </select>
-  <select value={role} onChange={e=>{ setRole(e.target.value); setPage(0); }} style={selectStyle} disabled={cat==="all"}>
-    <option value="all">{cat==="all" ? "Wybierz kategorię" : "Wszystkie zawody"}</option>
-    {availableRoles.map(r=><option key={r} value={r}>{r}</option>)}
-  </select>
-  <select value={sortBy} onChange={e=>{ setSortBy(e.target.value); setPage(0); }} style={selectStyle}>
-    <option value="newest">Najnowsze</option>
-    <option value="rate_desc">Stawka: najwyższa</option>
-    <option value="rate_asc">Stawka: najniższa</option>
-  </select>
-</div>
-
-              {/* Wiersz 3 — filtry stawki */}
-<div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:10, marginBottom:12, alignItems:"center" }}>
-  <input type="number" placeholder="Stawka od (zł/h)" value={rateMin} onChange={e=>{ setRateMin(e.target.value); setPage(0); }} style={inputStyle} />
-  <input type="number" placeholder="Stawka do (zł/h)" value={rateMax} onChange={e=>{ setRateMax(e.target.value); setPage(0); }} style={inputStyle} />
-  <button onClick={()=>{ setSearch(""); setRegion("Cała Polska"); setCat("all"); setRole("all"); setSortBy("newest"); setRateMin(""); setRateMax(""); setCity(""); setPage(0); }} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600, whiteSpace:"nowrap" }}>
-    🔄 Resetuj filtry
-  </button>
-</div>
-
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 180px 180px", gap:10, marginBottom:10 }}>
+                <input placeholder="🔍 Zawód, umiejętność..." value={search} onChange={e=>{ setSearch(e.target.value); setPage(0); }} style={inputStyle} />
+                <select value={region} onChange={e=>{ setRegion(e.target.value); setCity(""); setPage(0); }} style={selectStyle}>
+                  {REGIONS.map(r=><option key={r}>{r}</option>)}
+                </select>
+                <CityAutocomplete value={city} onChange={v=>{ setCity(v); setPage(0); }} region={region==="Cała Polska" ? "" : region} />
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
+                <select value={cat} onChange={e=>{ setCat(e.target.value); setRole("all"); setPage(0); }} style={selectStyle}>
+                  {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+                <select value={role} onChange={e=>{ setRole(e.target.value); setPage(0); }} style={selectStyle} disabled={cat==="all"}>
+                  <option value="all">{cat==="all" ? "Wybierz kategorię" : "Wszystkie zawody"}</option>
+                  {availableRoles.map(r=><option key={r} value={r}>{r}</option>)}
+                </select>
+                <select value={sortBy} onChange={e=>{ setSortBy(e.target.value); setPage(0); }} style={selectStyle}>
+                  <option value="newest">Najnowsze</option>
+                  <option value="rate_desc">Stawka: najwyższa</option>
+                  <option value="rate_asc">Stawka: najniższa</option>
+                </select>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:10, marginBottom:12, alignItems:"center" }}>
+                <input type="number" placeholder="Stawka od (zł/h)" value={rateMin} onChange={e=>{ setRateMin(e.target.value); setPage(0); }} style={inputStyle} />
+                <input type="number" placeholder="Stawka do (zł/h)" value={rateMax} onChange={e=>{ setRateMax(e.target.value); setPage(0); }} style={inputStyle} />
+                <button onClick={()=>{ setSearch(""); setRegion("Cała Polska"); setCat("all"); setRole("all"); setSortBy("newest"); setRateMin(""); setRateMax(""); setCity(""); setPage(0); }} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600, whiteSpace:"nowrap" }}>
+                  🔄 Resetuj filtry
+                </button>
+              </div>
               <div style={{ fontSize:13, color:C.g400 }}>Znaleziono: <strong style={{ color:C.g800 }}>{filtered.length}</strong> ogłoszeń</div>
             </div>
 
@@ -296,11 +353,16 @@ export default function PanelPracodawcy() {
                           <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:16, color:C.g800, marginBottom:3 }}>{ad.role}</div>
                           <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.experience} dośw. · {ad.available}</div>
                         </div>
-                        <div style={{ textAlign:"right" }}>
-                          <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
-                            {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)
+                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <button onClick={()=>toggleFavorite(ad.id)} style={{ background:"transparent", border:"none", cursor:"pointer", fontSize:20, padding:4 }} title={favorites[ad.id]?"Usuń z ulubionych":"Dodaj do ulubionych"}>
+                            {favorites[ad.id] ? "⭐" : "☆"}
+                          </button>
+                          <div style={{ textAlign:"right" }}>
+                            <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
+                              {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)
+                            </div>
+                            {ad.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
                           </div>
-                          {ad.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
                         </div>
                       </div>
                       {ad.skills?.length > 0 && (
@@ -331,7 +393,6 @@ export default function PanelPracodawcy() {
                     </div>
                   ))}
                 </div>
-
                 {sorted.length > PER_PAGE && (
                   <div style={{ display:"flex", gap:8, justifyContent:"center", alignItems:"center", marginTop:24 }}>
                     <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={page===0} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.g200}`, background:C.white, fontSize:13, cursor:"pointer", color:C.g600, opacity:page===0?0.4:1 }}>← Poprzednia</button>
@@ -344,9 +405,11 @@ export default function PanelPracodawcy() {
           </div>
         )}
 
+        {/* CONTACTS */}
         {view==="contacts" && (
           <div>
-            {Object.keys(unlocked).length === 0 ? (
+            <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:20 }}>📞 Moje kontakty</h2>
+            {unlockedAds.length === 0 ? (
               <div style={{ textAlign:"center", padding:"60px 20px", color:C.g400 }}>
                 <div style={{ fontSize:48, marginBottom:16 }}>📞</div>
                 <div style={{ fontSize:15, fontWeight:600, color:C.g600, marginBottom:8 }}>Brak odblokowanych kontaktów</div>
@@ -354,7 +417,7 @@ export default function PanelPracodawcy() {
               </div>
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                {ads.filter(a=>unlocked[a.id]).map(ad=>(
+                {unlockedAds.map(ad=>(
                   <div key={ad.id} style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, paddingBottom:12, borderBottom:`1px solid ${C.g100}` }}>
                       <div>
@@ -366,16 +429,41 @@ export default function PanelPracodawcy() {
                         <div style={{ fontSize:11, color:C.g400 }}>{ad.experience} dośw.</div>
                       </div>
                     </div>
+
                     {ad.skills?.length > 0 && (
                       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
                         {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
                       </div>
                     )}
-                    <div style={{ background:C.green+"0a", borderRadius:8, padding:"12px 14px", border:`1px solid ${C.green}30` }}>
+
+                    <div style={{ background:C.green+"0a", borderRadius:8, padding:"12px 14px", border:`1px solid ${C.green}30`, marginBottom:12 }}>
                       <div style={{ fontSize:11, fontWeight:700, color:C.green, marginBottom:8 }}>✅ Dane kontaktowe</div>
                       <div style={{ fontSize:14, fontWeight:700, color:C.g800 }}>{ad.profiles?.name}</div>
                       <div style={{ fontSize:13, color:C.blue, fontWeight:600 }}>☎ {ad.profiles?.phone}</div>
                       <div style={{ fontSize:12, color:C.g600 }}>✉ {ad.profiles?.email}</div>
+                    </div>
+
+                    {/* Status kontaktu */}
+                    <div style={{ marginBottom:12 }}>
+                      <div style={{ fontSize:11, fontWeight:700, color:C.g600, marginBottom:6, textTransform:"uppercase", letterSpacing:0.5 }}>Status</div>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                        {STATUSES.map(s=>(
+                          <button key={s.id} onClick={()=>saveStatus(ad.id, s.id)} style={{ padding:"4px 12px", borderRadius:20, border:`1.5px solid ${statuses[ad.id]===s.id?s.color:C.g200}`, background:statuses[ad.id]===s.id?s.color+"18":C.white, color:statuses[ad.id]===s.id?s.color:C.g600, fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Notatka */}
+                    <div style={{ background:C.bg, borderRadius:8, padding:"10px 14px", border:`1px solid ${C.g100}` }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:notes[ad.id]?6:0 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:C.g600, textTransform:"uppercase", letterSpacing:0.5 }}>📝 Notatka</div>
+                        <button onClick={()=>{ setEditingNote(ad.id); setNoteText(notes[ad.id]||""); }} style={{ background:"transparent", border:"none", color:C.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                          {notes[ad.id] ? "Edytuj" : "+ Dodaj"}
+                        </button>
+                      </div>
+                      {notes[ad.id] && <div style={{ fontSize:13, color:C.g600, lineHeight:1.6 }}>{notes[ad.id]}</div>}
                     </div>
                   </div>
                 ))}
@@ -384,6 +472,65 @@ export default function PanelPracodawcy() {
           </div>
         )}
 
+        {/* FAVORITES */}
+        {view==="favorites" && (
+          <div>
+            <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:20 }}>⭐ Ulubione ogłoszenia</h2>
+            {favoriteAds.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"60px 20px", color:C.g400 }}>
+                <div style={{ fontSize:48, marginBottom:16 }}>⭐</div>
+                <div style={{ fontSize:15, fontWeight:600, color:C.g600, marginBottom:8 }}>Brak ulubionych</div>
+                <div style={{ fontSize:13 }}>Kliknij ☆ przy ogłoszeniu żeby je zapisać.</div>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                {favoriteAds.map(ad=>(
+                  <div key={ad.id} style={{ background:C.white, borderRadius:14, padding:"20px", border:`1.5px solid ${C.yellow}50`, boxShadow:"0 2px 10px rgba(245,158,11,0.08)" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                      <div>
+                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:16, color:C.g800, marginBottom:3 }}>{ad.role}</div>
+                        <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.experience} dośw. · {ad.available}</div>
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <button onClick={()=>toggleFavorite(ad.id)} style={{ background:"transparent", border:"none", cursor:"pointer", fontSize:20, padding:4 }}>⭐</button>
+                        <div style={{ textAlign:"right" }}>
+                          <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
+                            {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {ad.skills?.length > 0 && (
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
+                        {ad.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
+                      </div>
+                    )}
+                    {ad.description && <p style={{ fontSize:13, color:C.g600, lineHeight:1.6, marginBottom:12 }}>{ad.description}</p>}
+                    {unlocked[ad.id] ? (
+                      <div style={{ background:C.green+"0a", borderRadius:10, padding:"14px 16px", border:`1px solid ${C.green}30` }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:C.green, marginBottom:8 }}>✅ Dane kontaktowe odblokowane</div>
+                        <div style={{ fontSize:14, fontWeight:700, color:C.g800 }}>{ad.profiles?.name}</div>
+                        <div style={{ fontSize:13, color:C.blue, fontWeight:600 }}>☎ {ad.profiles?.phone}</div>
+                        <div style={{ fontSize:12, color:C.g600 }}>✉ {ad.profiles?.email}</div>
+                      </div>
+                    ) : (
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.bg, borderRadius:10, padding:"12px 16px", border:`1px dashed ${C.g200}` }}>
+                        <div style={{ fontSize:12, color:C.g400 }}>
+                          🔒 <span style={{ fontFamily:"monospace", letterSpacing:2, color:C.g200 }}>Jan K***** · +48 5** *** ***</span>
+                        </div>
+                        <button onClick={()=>setShowUnlock(ad)} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"8px 16px", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                          🔓 Odblokuj kontakt
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PROFILE */}
         {view==="profile" && (
           <div>
             <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800, marginBottom:20 }}>👤 Mój profil</h2>
