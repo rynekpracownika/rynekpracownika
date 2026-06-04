@@ -285,7 +285,12 @@ function AdCard({ ad, preview, onUnlock }) {
     <div style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:ad.premium?`1.5px solid ${C.yellow}50`:`1px solid ${C.g100}`, boxShadow:ad.premium?"0 4px 20px rgba(245,158,11,0.08)":"0 2px 10px rgba(26,115,232,0.04)", position:"relative", cursor:"pointer", transition:"all 0.18s" }}
       onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 28px rgba(26,115,232,0.12)"; e.currentTarget.style.transform="translateY(-2px)";}}
       onMouseLeave={e=>{e.currentTarget.style.boxShadow=ad.premium?"0 4px 20px rgba(245,158,11,0.08)":"0 2px 10px rgba(26,115,232,0.04)"; e.currentTarget.style.transform="";}}
-      onClick={()=>window.location.href=`/ogloszenie/${ad.id}`}
+      onClick={async ()=>{
+  if(ad.id && typeof ad.id === 'number') {
+    await supabase.from("ads").update({ views: (ad.views || 0) + 1 }).eq("id", ad.id);
+  }
+  window.location.href=`/ogloszenie/${ad.id}`;
+}}
     >
       {ad.premium && <div style={{ position:"absolute", top:0, right:0, background:`linear-gradient(135deg,${C.yellow},${C.orange})`, padding:"3px 12px", borderBottomLeftRadius:10, borderTopRightRadius:12, fontSize:9, fontWeight:800, color:"#fff", letterSpacing:1 }}>★ WYRÓŻNIONE</div>}
       <div style={{ display:"flex", gap:12, marginBottom:12 }}>
@@ -310,6 +315,7 @@ function AdCard({ ad, preview, onUnlock }) {
         <span>🗓 {ad.exp || ad.experience} dośw.</span>
         {ad.remote && <span style={{ color:C.green, fontWeight:600 }}>🏠 Zdalnie</span>}
         <span>📨 {ad.offers||0} ofert</span>
+        <span>👁 {ad.views||0} wyświetleń</span>
         <span style={{ marginLeft:"auto", color:C.g200 }}>{ad.added}</span>
       </div>
       <div style={{ background:C.g50, borderRadius:8, padding:"10px 14px", border:`1px dashed ${C.g200}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
