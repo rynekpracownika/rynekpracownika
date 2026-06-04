@@ -137,7 +137,7 @@ export default function PanelPracownika() {
   const [profile, setProfile] = useState(null);
   const [ads, setAds] = useState([]);
   const [unlocks, setUnlocks] = useState([]);
-  const [view, setView] = useState("dashboard");
+  const [view, setView] = useState("myads");
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const router = useRouter();
@@ -347,7 +347,7 @@ export default function PanelPracownika() {
 
         {/* TABS */}
         <div style={{ display:"flex", gap:8, marginBottom:28, flexWrap:"wrap" }}>
-          {[["dashboard","📊 Dashboard"],["addad", editingId?"✏️ Edytuj ogłoszenie":"➕ Dodaj ogłoszenie"],["myads","📋 Moje ogłoszenia"],["stats","📈 Statystyki"],["profile","👤 Profil"]].map(([id,label])=>(
+          {[["myads","📋 Moje ogłoszenia"],["addad", editingId?"✏️ Edytuj ogłoszenie":"➕ Dodaj ogłoszenie"],["stats","📈 Statystyki"],["profile","👤 Profil"]].map(([id,label])=>(
             <button key={id} onClick={()=>{setView(id);setSaved(false);if(id!=="addad"){setEditingId(null);setForm({cat:"",role:"",exp:"",rateFrom:"",rateTo:"",region:"",city:"",avail:"",contract:[],remote:false,skills:"",desc:""});setFormStep(1);}}} style={{
               padding:"9px 18px", borderRadius:10, border:`1.5px solid ${view===id?C.blue:C.g200}`,
               background:view===id?C.blue:C.white, color:view===id?"#fff":C.g600,
