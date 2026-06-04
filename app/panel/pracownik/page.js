@@ -150,6 +150,7 @@ export default function PanelPracownika() {
   const [formStep, setFormStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const up = (k,v) => setForm(f=>({...f,[k]:v}));
   const selCat = CATEGORIES.find(c=>c.id===form.cat);
@@ -283,6 +284,54 @@ export default function PanelPracownika() {
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
+
+      {showPreview && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowPreview(false)}>
+          <div style={{ background:C.white, borderRadius:18, padding:32, maxWidth:500, width:"100%", boxShadow:"0 20px 60px rgba(0,0,0,0.2)", maxHeight:"90vh", overflowY:"auto" }} onClick={e=>e.stopPropagation()}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:18, color:C.g800 }}>👁 Podgląd ogłoszenia</h3>
+              <button onClick={()=>setShowPreview(false)} style={{ background:"transparent", border:"none", fontSize:20, cursor:"pointer", color:C.g400 }}>✕</button>
+            </div>
+            <div style={{ background:C.bg, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
+                <div>
+                  <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:16, color:C.g800, marginBottom:4 }}>{form.role || "Stanowisko"}</div>
+                  <div style={{ fontSize:12, color:C.g400 }}>{form.city || "Miasto"}, {form.region || "Województwo"} · {form.exp} dośw. · {form.avail}</div>
+                </div>
+                <div style={{ textAlign:"right" }}>
+                  <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
+                    {form.rateFrom}{form.rateTo ? `–${form.rateTo}` : ""} zł/h netto (na rękę)
+                  </div>
+                  {form.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
+                </div>
+              </div>
+              {form.skills && (
+                <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
+                  {form.skills.split(",").map(s=>s.trim()).filter(Boolean).map(s=>(
+                    <span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>
+                  ))}
+                </div>
+              )}
+              {form.desc && <p style={{ fontSize:13, color:C.g600, lineHeight:1.6, marginBottom:12 }}>{form.desc}</p>}
+              {form.contract?.length > 0 && (
+                <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
+                  {form.contract.map(c=><span key={c} style={{ background:C.navy+"12", color:C.navy, padding:"3px 10px", borderRadius:6, fontSize:11, fontWeight:600 }}>{c}</span>)}
+                </div>
+              )}
+              <div style={{ background:C.bg, borderRadius:8, padding:"10px 14px", border:`1px dashed ${C.g200}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div style={{ fontSize:11, color:C.g400 }}>🔒 <span style={{ fontFamily:"monospace", letterSpacing:2 }}>Jan K***** · +48 5** *** ***</span></div>
+                <span style={{ fontSize:11, color:C.g400 }}>Odblokuj kontakt</span>
+              </div>
+            </div>
+            <div style={{ marginTop:20, display:"flex", gap:10 }}>
+              <button onClick={()=>setShowPreview(false)} style={{ flex:1, padding:"11px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wróć do edycji</button>
+              <button onClick={()=>{ setShowPreview(false); handleSaveAd(); }} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+                ✅ Opublikuj ogłoszenie
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TOPBAR */}
       <div style={{ background:C.white, borderBottom:`1px solid ${C.g100}`, padding:"0 20px", height:56, display:"flex", alignItems:"center", gap:12, position:"sticky", top:0, zIndex:100, boxShadow:"0 1px 8px rgba(0,0,0,0.05)" }}>
@@ -481,11 +530,12 @@ export default function PanelPracownika() {
                   Możliwa praca zdalna / hybrydowa
                 </label>
                 <div style={{ display:"flex", gap:10 }}>
-                  <button onClick={()=>setFormStep(2)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
-                  <button onClick={handleSaveAd} disabled={saving} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>
-                    {saving ? "Zapisywanie..." : editingId ? "✅ Zapisz zmiany" : "✅ Opublikuj ogłoszenie"}
-                  </button>
-                </div>
+  <button onClick={()=>setFormStep(2)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
+  <button onClick={()=>setShowPreview(true)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.blue}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.blue }}>👁 Podgląd</button>
+  <button onClick={handleSaveAd} disabled={saving} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+    {saving ? "Zapisywanie..." : editingId ? "✅ Zapisz zmiany" : "✅ Opublikuj ogłoszenie"}
+  </button>
+</div>
               </div>
             )}
           </div>
