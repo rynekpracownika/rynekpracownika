@@ -39,7 +39,7 @@ export default function DlaPracodawcy() {
         </div>
         <div style={{ display:"flex", gap:10 }}>
           <button onClick={()=>router.push("/logowanie")} style={{ background:"transparent", border:`1.5px solid ${C.blue}`, color:C.blue, padding:"8px 18px", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer" }}>Zaloguj</button>
-          <button onClick={()=>router.push("/rejestracja")} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, border:"none", color:"#fff", padding:"8px 18px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>Zarejestruj firmę →</button>
+          <button onClick={()=>router.push("/rejestracja?type=employer")} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, border:"none", color:"#fff", padding:"8px 18px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>Zarejestruj firmę →</button>
         </div>
       </nav>
 
@@ -53,14 +53,14 @@ export default function DlaPracodawcy() {
             🏢 Dla pracodawców i firm rekrutujących
           </div>
           <h1 className="hero-title" style={{ fontFamily:"Sora,sans-serif", fontWeight:900, fontSize:48, color:"#fff", lineHeight:1.15, marginBottom:20 }}>
-            Znajdź pracownika,<br/>
-            <span style={{ color:"#93C5FD" }}>który już chce pracować.</span>
+            Koniec z przeglądaniem CV.<br/>
+            <span style={{ color:"#93C5FD" }}>Kandydat już na Ciebie czeka.</span>
           </h1>
           <p style={{ fontSize:18, color:"rgba(255,255,255,0.75)", maxWidth:540, margin:"0 auto 40px", lineHeight:1.65 }}>
-            Przeglądaj profile elektryków, kierowców, spawaczy i setek innych zawodów. Płacisz tylko za kontakt który Cię interesuje.
+            Nie czekaj na aplikacje. Przeglądaj profile elektryków, kierowców, spawaczy — ze stawką i dostępnością. Płacisz tylko za kontakt który Cię interesuje.
           </p>
           <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
-            <button onClick={()=>router.push("/rejestracja")} style={{ background:"#fff", color:C.navy, border:"none", padding:"14px 32px", borderRadius:10, fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.18)" }}>
+            <button onClick={()=>router.push("/rejestracja?type=employer")} style={{ background:"#fff", color:C.navy, border:"none", padding:"14px 32px", borderRadius:10, fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.18)" }}>
               🚀 Zacznij szukać za darmo
             </button>
             <button onClick={()=>router.push("/logowanie")} style={{ background:"rgba(255,255,255,0.12)", color:"#fff", border:"1.5px solid rgba(255,255,255,0.28)", padding:"14px 28px", borderRadius:10, fontSize:15, fontWeight:600, cursor:"pointer" }}>
@@ -74,7 +74,7 @@ export default function DlaPracodawcy() {
       <div style={{ background:C.white, padding:"60px 20px", borderBottom:`1px solid ${C.g100}` }}>
         <div style={{ maxWidth:900, margin:"0 auto", textAlign:"center" }}>
           <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:32, fontWeight:800, color:C.g800, marginBottom:16 }}>
-            Koniec z przeglądaniem setek CV.
+            Nie szukaj pracownika. Niech pracownik znajdzie Ciebie.
           </h2>
           <p style={{ fontSize:16, color:C.g600, maxWidth:600, margin:"0 auto 48px", lineHeight:1.7 }}>
             Na rynekpracownika.pl to pracownicy ogłaszają się ze swoją stawką i dostępnością. Ty tylko wybierasz kogo chcesz zatrudnić.
@@ -104,7 +104,7 @@ export default function DlaPracodawcy() {
           </div>
           <div className="grid-3">
             {[
-              { step:"1", icon:"🔍", title:"Szukasz profili", desc:"Filtrujesz po branży, regionie i stawce. Widzisz profile pracowników którzy pasują do Twoich potrzeb." },
+              { step:"1", icon:"🔍", title:"Szukasz profili", desc:"Filtrujesz po branży, regionie, zawodzie i stawce. Widzisz profile pracowników którzy pasują do Twoich potrzeb." },
               { step:"2", icon:"👤", title:"Przeglądasz profil", desc:"Widzisz doświadczenie, umiejętności, oczekiwaną stawkę i dostępność. Dane kontaktowe są ukryte." },
               { step:"3", icon:"🔓", title:"Odblokowujesz kontakt", desc:"Płacisz jednorazowo za odblokowanie danych. Dzwonisz bezpośrednio do kandydata." },
             ].map(s=>(
@@ -133,7 +133,7 @@ export default function DlaPracodawcy() {
                 icon:"🔓",
                 title:"Pojedyncze odblokowanie",
                 price:"9 zł",
-                unit:"brutto / kontakt",
+                unit:"netto (na rękę) / kontakt",
                 desc:"Idealne na start. Odblokujesz dane jednego pracownika.",
                 features:["1 odblokowanie kontaktu","Dostęp do telefonu i emaila","Ważność bezterminowa"],
                 color:C.blue,
@@ -143,7 +143,7 @@ export default function DlaPracodawcy() {
                 icon:"📦",
                 title:"Pakiet 10 kontaktów",
                 price:"79 zł",
-                unit:"brutto / 10 kontaktów",
+                unit:"netto (na rękę) / 10 kontaktów",
                 desc:"Oszczędzasz 11 zł. Idealne przy aktywnej rekrutacji.",
                 features:["10 odblokowań kontaktów","Dostęp do telefonu i emaila","Ważność bezterminowa","Oszczędzasz 11 zł"],
                 color:C.navy,
@@ -164,7 +164,7 @@ export default function DlaPracodawcy() {
                     </div>
                   ))}
                 </div>
-                <button onClick={()=>router.push("/rejestracja")} style={{ width:"100%", background:p.primary?"#fff":`linear-gradient(135deg,${C.blue},${C.navy})`, color:p.primary?C.navy:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+                <button onClick={()=>router.push("/rejestracja?type=employer")} style={{ width:"100%", background:p.primary?"#fff":`linear-gradient(135deg,${C.blue},${C.navy})`, color:p.primary?C.navy:"#fff", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>
                   Zarejestruj się →
                 </button>
               </div>
@@ -197,7 +197,7 @@ export default function DlaPracodawcy() {
         <p style={{ color:"rgba(255,255,255,0.72)", fontSize:15, marginBottom:36, maxWidth:480, margin:"0 auto 36px" }}>
           Rejestracja jest bezpłatna. Płacisz dopiero gdy znajdziesz kogoś kogo chcesz zatrudnić.
         </p>
-        <button onClick={()=>router.push("/rejestracja")} style={{ background:"#fff", color:C.navy, border:"none", padding:"14px 36px", borderRadius:10, fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.15)" }}>
+        <button onClick={()=>router.push("/rejestracja?type=employer")} style={{ background:"#fff", color:C.navy, border:"none", padding:"14px 36px", borderRadius:10, fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.15)" }}>
           Zarejestruj firmę za darmo →
         </button>
       </div>
@@ -207,7 +207,7 @@ export default function DlaPracodawcy() {
         <div onClick={()=>router.push("/")} style={{ cursor:"pointer", fontFamily:"Sora,sans-serif", fontWeight:800, color:"#fff", fontSize:14, marginBottom:8 }}>
           rynek<span style={{ color:C.blue }}>pracownika</span>.pl
         </div>
-        <div>© 2025 rynekpracownika.pl — Wszelkie prawa zastrzeżone</div>
+        <div>© 2026 rynekpracownika.pl — Wszelkie prawa zastrzeżone</div>
       </footer>
     </div>
   );
