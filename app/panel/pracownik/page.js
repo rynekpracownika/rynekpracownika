@@ -112,9 +112,14 @@ export default function PanelPracownika() {
   }
 
   async function handleSaveAd() {
-    if (!form.cat || !form.role || !form.region || !form.city) {
-      alert("Wypełnij wymagane pola!"); return;
-    }
+    if (!form.cat) { alert("Wybierz branżę!"); return; }
+    if (!form.role) { alert("Wybierz stanowisko!"); return; }
+    if (!form.exp) { alert("Wybierz doświadczenie!"); return; }
+    if (!form.avail) { alert("Wybierz dostępność!"); return; }
+    if (!form.rateFrom) { alert("Podaj stawkę minimalną!"); return; }
+    if (!form.region) { alert("Wybierz województwo!"); return; }
+    if (!form.city) { alert("Podaj miasto!"); return; }
+    if (form.contract.length === 0) { alert("Wybierz co najmniej jeden rodzaj umowy!"); return; }
     setSaving(true);
     const skillsArray = form.skills.split(",").map(s=>s.trim()).filter(Boolean);
     const payload = {
@@ -332,7 +337,12 @@ export default function PanelPracownika() {
                 </div>
                 <div style={{ display:"flex", gap:10 }}>
                   <button onClick={()=>setFormStep(1)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
-                  <button onClick={()=>setFormStep(3)} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>Dalej →</button>
+                  <button onClick={()=>{
+                     if(!form.exp) { alert("Wybierz doświadczenie!"); return; }
+                     if(!form.avail) { alert("Wybierz dostępność!"); return; }
+                     if(!form.rateFrom) { alert("Podaj stawkę minimalną!"); return; }
+                     setFormStep(3);
+                  }} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>Dalej →</button>
                 </div>
               </div>
             )}
