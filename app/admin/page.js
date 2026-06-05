@@ -570,9 +570,9 @@ function ReportsPanel() {
   useEffect(()=>{
     async function load() {
       const { data } = await supabase
-        .from("reports")
-        .select("*, ads(role, city, region)")
-        .order("created_at", { ascending:false });
+  .from("reports")
+  .select("*, ads(id, role, city, region, rate_from, rate_to, description, skills, category)")
+  .order("created_at", { ascending:false });
       setReports(data||[]);
       setLoading(false);
     }
@@ -639,21 +639,31 @@ function ReportsPanel() {
               </div>
 
               <div style={{ background:C.bg, borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
-                <div style={{ fontSize:12, fontWeight:700, color:C.g600, marginBottom:4 }}>Powód: <span style={{ color:C.red }}>{r.reason}</span></div>
-                {r.details && <div style={{ fontSize:12, color:C.g600 }}>Szczegóły: {r.details}</div>}
-              </div>
+  <div style={{ fontSize:12, fontWeight:700, color:C.g600, marginBottom:4 }}>Powód: <span style={{ color:C.red }}>{r.reason}</span></div>
+  {r.details && <div style={{ fontSize:12, color:C.g600 }}>Szczegóły: {r.details}</div>}
+</div>
+
+{r.ads && (
+  <div style={{ background:C.bg, borderRadius:8, padding:"10px 14px", marginBottom:12, border:`1px solid ${C.g100}` }}>
+    <div style={{ fontSize:11, fontWeight:700, color:C.g600, marginBottom:6, textTransform:"uppercase", letterSpacing:0.5 }}>Szczegóły ogłoszenia</div>
+    <div style={{ fontSize:13, fontWeight:700, color:C.g800, marginBottom:4 }}>{r.ads.role} · {r.ads.city}, {r.ads.region}</div>
+    {r.ads.rate_from && <div style={{ fontSize:12, color:C.navy, fontWeight:600, marginBottom:4 }}>{r.ads.rate_from}{r.ads.rate_to?`–${r.ads.rate_to}`:""} zł/h</div>}
+    {r.ads.description && <div style={{ fontSize:12, color:C.g600, marginBottom:4 }}>{r.ads.description}</div>}
+    {r.ads.skills?.length > 0 && (
+      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+        {r.ads.skills.map(s=><span key={s} style={{ background:C.blue+"12", color:C.blue, padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:600 }}>{s}</span>)}
+      </div>
+    )}
+  </div>
+)}
 
               {r.status === "pending" && (
                 <div style={{ display:"flex", gap:8 }}>
-                  <button onClick={()=>resolveReport(r.id)}
-                    style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.green+"10", color:C.green, fontSize:12, fontWeight:600, cursor:"pointer" }}>✅ Oznacz jako rozwiązane</button>
-                  {r.ads && (
-                    <button onClick={()=>setConfirm({ msg:`Usunąć ogłoszenie "${r.ads?.role}"?`, onConfirm:()=>deleteAd(r.ad_id, r.id) })}
-                      style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń ogłoszenie</button>
-                  )}
-                  <button onClick={()=>setConfirm({ msg:`Usunąć to zgłoszenie?`, onConfirm:()=>deleteReport(r.id) })}
-                    style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.g100, color:C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń zgłoszenie</button>
-                </div>
+  <button onClick={()=>setConfirm({ msg:`Usunąć ogłoszenie "${r.ads?.role}"?`, onConfirm:()=>deleteAd(r.ad_id, r.id) })}
+    style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń ogłoszenie</button>
+  <button onClick={()=>deleteReport(r.id)}
+    style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.g100, color:C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>✅ Ignoruj zgłoszenie</button>
+</div>
               )}
             </div>
           ))}
