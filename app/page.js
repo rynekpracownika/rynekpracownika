@@ -180,7 +180,7 @@ function Navbar({ view, setView }) {
   );
 }
 
-function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, profile, setShowAuthModal }) {
+function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, profile, setShowAuthModal, setReportAd }) {
   const stats = [
     { n:adsCount>0?`${adsCount}`:"0", t:"Aktywnych ogłoszeń" },
     { n:"16 woj.", t:"Zasięg regionalny" },
@@ -262,14 +262,14 @@ function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, pr
       </div>
 
       <div style={{ maxWidth:1200, margin:"0 auto", padding:"52px 20px" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:28 }}>
-          <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:24, fontWeight:800, color:C.g800 }}>Najnowsze ogłoszenia</h2>
-          <button onClick={()=>setView("ads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie →</button>
-        </div>
-        <div className="grid-3">
-          {(realAds.length>0?realAds:ADS).slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview />)}
-        </div>
-      </div>
+  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:28 }}>
+    <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:24, fontWeight:800, color:C.g800 }}>Najnowsze ogłoszenia</h2>
+    <button onClick={()=>setView("ads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie →</button>
+  </div>
+  <div className="grid-3">
+    {(realAds.length>0?realAds:ADS).slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview onReport={()=>setReportAd(ad)} />)}
+  </div>
+</div>
 
       <div style={{ background:`linear-gradient(135deg,${C.navy},${C.blue})`, padding:"60px 20px", textAlign:"center" }}>
         <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:32, fontWeight:800, color:"#fff", marginBottom:14 }}>Masz zawód? Podaj swoje warunki.</h2>
@@ -279,7 +279,7 @@ function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, pr
     </div>
   );
 }
-function AdCard({ ad, preview, onUnlock }) {
+function AdCard({ ad, preview, onUnlock, onReport }) {
   const cat = CATEGORIES.find(c=>c.id===ad.cat || c.id===ad.category);
   return (
     <div style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:ad.premium?`1.5px solid ${C.yellow}50`:`1px solid ${C.g100}`, boxShadow:ad.premium?"0 4px 20px rgba(245,158,11,0.08)":"0 2px 10px rgba(26,115,232,0.04)", position:"relative", cursor:"pointer", transition:"all 0.18s" }}
@@ -319,10 +319,13 @@ function AdCard({ ad, preview, onUnlock }) {
         <span style={{ marginLeft:"auto", color:C.g200 }}>{ad.added}</span>
       </div>
       <div style={{ background:C.g50, borderRadius:8, padding:"10px 14px", border:`1px dashed ${C.g200}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div style={{ fontSize:11, color:C.g400 }}>🔒 <span style={{ fontFamily:"monospace", letterSpacing:3, color:C.g200 }}>Jan K*****i · ☎ +48 5** *** ***</span></div>
-        {!preview && <Btn variant="primary" small onClick={onUnlock}>Odblokuj kontakt</Btn>}
-      </div>
-      {preview && <div style={{ display:"flex", gap:6, marginTop:10 }}>{(ad.contract||[]).map(c=><Pill key={c} text={c} small color={C.navy} />)}</div>}
+  <div style={{ fontSize:11, color:C.g400 }}>🔒 <span style={{ fontFamily:"monospace", letterSpacing:3, color:C.g200 }}>Jan K*****i · ☎ +48 5** *** ***</span></div>
+  <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+    {!preview && <Btn variant="primary" small onClick={onUnlock}>Odblokuj kontakt</Btn>}
+    <button onClick={e=>{ e.stopPropagation(); onReport && onReport(); }} style={{ background:"transparent", border:"none", color:C.g400, fontSize:11, cursor:"pointer", padding:"4px 8px" }}>🚨 Zgłoś</button>
+  </div>
+</div>
+{preview && <div style={{ display:"flex", gap:6, marginTop:10 }}>{(ad.contract||[]).map(c=><Pill key={c} text={c} small color={C.navy} />)}</div>}
     </div>
   );
 }
@@ -763,6 +766,75 @@ function Footer({ setView }) {
   );
 }
 
+function ReportModal({ ad, onClose, user }) {
+  const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const reasons = ["Spam", "Nieodpowiednie treści", "Fałszywe dane", "Duplikat ogłoszenia", "Inne"];
+
+  async function handleSubmit() {
+    if (!reason) { alert("Wybierz powód zgłoszenia!"); return; }
+    setSending(true);
+    await supabase.from("reports").insert({
+      ad_id: ad.id,
+      reporter_id: user?.id || null,
+      reason,
+      details,
+      status: "pending",
+    });
+    setSending(false);
+    setDone(true);
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={onClose}>
+      <div style={{ background:"#fff", borderRadius:18, padding:32, maxWidth:420, width:"100%", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
+        {done ? (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
+            <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:20, color:"#1E293B", marginBottom:8 }}>Zgłoszenie wysłane!</h3>
+            <p style={{ fontSize:14, color:"#475569", marginBottom:24 }}>Dziękujemy za zgłoszenie. Admin sprawdzi ogłoszenie.</p>
+            <button onClick={onClose} style={{ background:`linear-gradient(135deg,#1A73E8,#0D47A1)`, color:"#fff", border:"none", padding:"11px 28px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer" }}>Zamknij</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <h3 style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:18, color:"#1E293B" }}>🚨 Zgłoś ogłoszenie</h3>
+              <button onClick={onClose} style={{ background:"transparent", border:"none", fontSize:20, cursor:"pointer", color:"#94A3B8" }}>✕</button>
+            </div>
+            <div style={{ background:"#F5F7FA", borderRadius:8, padding:"10px 14px", marginBottom:20, fontSize:13, color:"#475569" }}>
+              <strong>{ad.role}</strong> · {ad.city}, {ad.region}
+            </div>
+            <div style={{ marginBottom:16 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:"#475569", display:"block", marginBottom:8, textTransform:"uppercase", letterSpacing:0.5 }}>Powód zgłoszenia</label>
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {reasons.map(r=>(
+                  <label key={r} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:13, color:"#1E293B" }}>
+                    <input type="radio" name="reason" value={r} checked={reason===r} onChange={()=>setReason(r)} style={{ accentColor:"#1A73E8" }} />
+                    {r}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:"#475569", display:"block", marginBottom:6, textTransform:"uppercase", letterSpacing:0.5 }}>Szczegóły (opcjonalnie)</label>
+              <textarea rows={3} value={details} onChange={e=>setDetails(e.target.value)} placeholder="Opisz problem..." style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:"1.5px solid #CBD5E1", fontSize:13, outline:"none", resize:"none", lineHeight:1.6, color:"#1E293B" }} />
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={onClose} style={{ flex:1, padding:"11px", borderRadius:8, border:"1.5px solid #CBD5E1", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#475569" }}>Anuluj</button>
+              <button onClick={handleSubmit} disabled={sending} style={{ flex:1, background:`linear-gradient(135deg,#DC2626,#991B1B)`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>
+                {sending ? "Wysyłanie..." : "🚨 Wyślij zgłoszenie"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [view, setView] = useState("home");
   const [realAds, setRealAds] = useState([]);
@@ -771,6 +843,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [reportAd, setReportAd] = useState(null);
 
 useEffect(() => {
   async function loadAds() {
@@ -821,6 +894,10 @@ useEffect(() => {
         }
       `}</style>
 
+{reportAd && (
+        <ReportModal ad={reportAd} onClose={()=>setReportAd(null)} user={user} />
+      )}
+
       {showAuthModal && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={()=>setShowAuthModal(false)}>
           <div style={{ background:"#fff", borderRadius:18, padding:36, maxWidth:400, width:"100%", textAlign:"center", boxShadow:"0 20px 60px rgba(0,0,0,0.2)" }} onClick={e=>e.stopPropagation()}>
@@ -838,7 +915,7 @@ useEffect(() => {
 
       <Navbar view={view} setView={setView} />
       <main>
-        {view==="home"       && <HomeView setView={setView} setActiveCat={setActiveCat} ads={realAds} adsCount={adsCount} user={user} profile={profile} setShowAuthModal={setShowAuthModal} />}
+        {view==="home" && <HomeView setView={setView} setActiveCat={setActiveCat} ads={realAds} adsCount={adsCount} user={user} profile={profile} setShowAuthModal={setShowAuthModal} setReportAd={setReportAd} />}
         {view==="ads"        && <AdsView ads={realAds} initialCat={activeCat} />}
         {view==="addad"      && <AddAdView setView={setView} />}
         {view==="ranking"    && <RankingView />}
