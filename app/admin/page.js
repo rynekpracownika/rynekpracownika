@@ -64,13 +64,15 @@ function ConfirmModal({ msg, onConfirm, onCancel, danger }) {
 }
 
 function Sidebar({ active, setActive, mobileOpen, setMobileOpen, counts }) {
-  const nav = [
-    { id:"dashboard", icon:"📊", label:"Dashboard" },
-    { id:"ads",       icon:"📋", label:"Ogłoszenia", badge: counts.ads },
-    { id:"users",     icon:"👥", label:"Użytkownicy", badge: counts.users },
-    { id:"unlocks",   icon:"🔓", label:"Odblokowania", badge: counts.unlocks },
-    { id:"stats",     icon:"📈", label:"Statystyki" },
-  ];
+
+const nav = [
+  { id:"dashboard", icon:"📊", label:"Dashboard" },
+  { id:"ads",       icon:"📋", label:"Ogłoszenia", badge: counts.ads },
+  { id:"users",     icon:"👥", label:"Użytkownicy", badge: counts.users },
+  { id:"unlocks",   icon:"🔓", label:"Odblokowania", badge: counts.unlocks },
+  { id:"stats",     icon:"📈", label:"Statystyki" },
+  { id:"reports",   icon:"🚨", label:"Zgłoszenia", badge: counts.reports },
+];
 
   const content = (
     <div style={{ display:"flex", flexDirection:"column", height:"100%" }}>
@@ -560,12 +562,113 @@ function StatsPanel() {
   );
 }
 
+function ReportsPanel() {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [confirm, setConfirm] = useState(null);
+
+  useEffect(()=>{
+    async function load() {
+      const { data } = await supabase
+        .from("reports")
+        .select("*, ads(role, city, region)")
+        .order("created_at", { ascending:false });
+      setReports(data||[]);
+      setLoading(false);
+    }
+    load();
+  },[]);
+
+  async function deleteReport(id) {
+    await supabase.from("reports").delete().eq("id", id);
+    setReports(prev=>prev.filter(r=>r.id!==id));
+    setConfirm(null);
+  }
+
+  async function resolveReport(id) {
+    await supabase.from("reports").update({ status:"resolved" }).eq("id", id);
+    setReports(prev=>prev.map(r=>r.id===id?{...r,status:"resolved"}:r));
+  }
+
+  async function deleteAd(adId, reportId) {
+    await supabase.from("ads").delete().eq("id", adId);
+    await supabase.from("reports").update({ status:"resolved" }).eq("id", reportId);
+    setReports(prev=>prev.map(r=>r.id===reportId?{...r,status:"resolved"}:r));
+    setConfirm(null);
+  }
+
+  const pending = reports.filter(r=>r.status==="pending");
+  const resolved = reports.filter(r=>r.status==="resolved");
+
+  if(loading) return <div style={{ padding:40, textAlign:"center", color:C.g400 }}>Ładowanie...</div>;
+
+  return (
+    <div style={{ padding:"16px" }}>
+      {confirm && <ConfirmModal msg={confirm.msg} danger onConfirm={confirm.onConfirm} onCancel={()=>setConfirm(null)} />}
+
+      <div style={{ display:"flex", gap:12, marginBottom:20 }}>
+        <div style={{ background:C.red+"10", border:`1px solid ${C.red}20`, borderRadius:10, padding:"12px 18px", fontSize:13, color:C.red, fontWeight:600 }}>
+          🚨 Oczekujące: <strong>{pending.length}</strong>
+        </div>
+        <div style={{ background:C.green+"10", border:`1px solid ${C.green}20`, borderRadius:10, padding:"12px 18px", fontSize:13, color:C.green, fontWeight:600 }}>
+          ✅ Rozwiązane: <strong>{resolved.length}</strong>
+        </div>
+      </div>
+
+      {reports.length === 0 ? (
+        <div style={{ textAlign:"center", padding:"60px 20px", color:C.g400 }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
+          <div style={{ fontSize:15, fontWeight:600, color:C.g600 }}>Brak zgłoszeń</div>
+        </div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          {reports.map(r=>(
+            <div key={r.id} style={{ background:C.white, borderRadius:14, border:r.status==="pending"?`1.5px solid ${C.red}30`:`1px solid ${C.g100}`, padding:"16px", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                <div>
+                  <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:14, color:C.g800, marginBottom:3 }}>
+                    {r.ads?.role || "Ogłoszenie usunięte"} · {r.ads?.city}, {r.ads?.region}
+                  </div>
+                  <div style={{ fontSize:12, color:C.g400 }}>
+                    📅 {new Date(r.created_at).toLocaleDateString("pl-PL")} · Ogłoszenie ID: {r.ad_id}
+                  </div>
+                </div>
+                <span style={{ padding:"2px 10px", borderRadius:20, fontSize:11, fontWeight:700, background:r.status==="pending"?C.red+"18":C.green+"18", color:r.status==="pending"?C.red:C.green, border:`1px solid ${r.status==="pending"?C.red:C.green}28` }}>
+                  {r.status==="pending"?"⏳ Oczekujące":"✅ Rozwiązane"}
+                </span>
+              </div>
+
+              <div style={{ background:C.bg, borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:C.g600, marginBottom:4 }}>Powód: <span style={{ color:C.red }}>{r.reason}</span></div>
+                {r.details && <div style={{ fontSize:12, color:C.g600 }}>Szczegóły: {r.details}</div>}
+              </div>
+
+              {r.status === "pending" && (
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={()=>resolveReport(r.id)}
+                    style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.green+"10", color:C.green, fontSize:12, fontWeight:600, cursor:"pointer" }}>✅ Oznacz jako rozwiązane</button>
+                  {r.ads && (
+                    <button onClick={()=>setConfirm({ msg:`Usunąć ogłoszenie "${r.ads?.role}"?`, onConfirm:()=>deleteAd(r.ad_id, r.id) })}
+                      style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.red+"10", color:C.red, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń ogłoszenie</button>
+                  )}
+                  <button onClick={()=>setConfirm({ msg:`Usunąć to zgłoszenie?`, onConfirm:()=>deleteReport(r.id) })}
+                    style={{ padding:"6px 14px", borderRadius:7, border:"none", background:C.g100, color:C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>🗑 Usuń zgłoszenie</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [active, setActive] = useState("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [counts, setCounts] = useState({ ads:0, users:0, unlocks:0 });
+  const [counts, setCounts] = useState({ ads:0, users:0, unlocks:0, reports:0 });
 
   useEffect(()=>{
     if(status==="unauthenticated") router.push("/admin/login");
@@ -573,12 +676,13 @@ export default function App() {
 
   useEffect(()=>{
     async function loadCounts() {
-      const [{ count: ads }, { count: users }, { count: unlocks }] = await Promise.all([
+      const [{ count: ads }, { count: users }, { count: unlocks }, { count: reports }] = await Promise.all([
         supabase.from("ads").select("*", { count:"exact", head:true }),
         supabase.from("profiles").select("*", { count:"exact", head:true }),
         supabase.from("unlocks").select("*", { count:"exact", head:true }),
+        supabase.from("reports").select("*", { count:"exact", head:true }).eq("status","pending"),
       ]);
-      setCounts({ ads:ads||0, users:users||0, unlocks:unlocks||0 });
+      setCounts({ ads:ads||0, users:users||0, unlocks:unlocks||0, reports:reports||0 });
     }
     if(session) loadCounts();
   },[session]);
@@ -607,6 +711,7 @@ export default function App() {
           {active==="users"     && <UsersPanel />}
           {active==="unlocks"   && <UnlocksPanel />}
           {active==="stats"     && <StatsPanel />}
+          {active==="reports"   && <ReportsPanel />}
         </div>
       </div>
     </div>
