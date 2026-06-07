@@ -1,12 +1,18 @@
-"use client";
-import { SessionProvider } from "next-auth/react";
+import Providers from "./components/Providers";
 import "./globals.css";
 import CookieBanner from "./components/CookieBanner";
+
+export const metadata = {
+  title: "RynekPracownika.pl – Odwrócone ogłoszenia o pracę",
+  description: "Pierwsza polska platforma odwróconych ogłoszeń o pracę. Elektryk, kierowca, spawacz – dodaj ogłoszenie ze swoją stawką. Firmy dzwonią do Ciebie.",
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="pl" translate="no">
       <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#1A73E8" />
@@ -14,19 +20,25 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="RynekPracy" />
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-{/* Google Analytics */}
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-V1K03LG7Z9"></script>
-<script dangerouslySetInnerHTML={{ __html: `
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-V1K03LG7Z9');
-`}} />
+
+        {/* Fonty — preconnect + preload */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+        />
+
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-V1K03LG7Z9"></script>
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-V1K03LG7Z9');
+        `}} />
+
         {/* SEO */}
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>RynekPracownika.pl – Odwrócone ogłoszenia o pracę</title>
-        <meta name="description" content="Pierwsza polska platforma odwróconych ogłoszeń o pracę. Elektryk, kierowca, spawacz – dodaj ogłoszenie ze swoją stawką. Firmy dzwonią do Ciebie." />
         <meta name="keywords" content="ogłoszenia o pracę, praca, elektryk, kierowca, spawacz, hydraulik, odwrócony rynek pracy, Polska" />
         <meta name="author" content="rynekpracownika.pl" />
         <link rel="canonical" href="https://rynekpracownika.pl" />
@@ -47,10 +59,10 @@ export default function RootLayout({ children }) {
         <meta name="twitter:image" content="https://rynekpracownika.pl/og-image.png" />
       </head>
       <body>
-        <SessionProvider>
-          {children}
-          <CookieBanner />
-        </SessionProvider>
+        <Providers>
+  {children}
+  <CookieBanner />
+</Providers>
       </body>
     </html>
   );

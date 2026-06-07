@@ -758,7 +758,7 @@ function Footer({ setView }) {
           ))}
         </div>
         <div style={{ borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:18, display:"flex", justifyContent:"space-between", fontSize:11, flexWrap:"wrap", gap:8 }}>
-          <span>© 2025 rynekpracownika.pl — Wszelkie prawa zastrzeżone</span>
+          <span>© 2026 rynekpracownika.pl — Wszelkie prawa zastrzeżone</span>
           <span>Polityka prywatności · Cookies · RODO</span>
         </div>
       </div>
