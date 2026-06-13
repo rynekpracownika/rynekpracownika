@@ -53,7 +53,14 @@ export default function Logowanie() {
     }
 
     setLoading(true); setError("");
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    let data, authError;
+    try {
+      ({ data, error: authError } = await supabase.auth.signInWithPassword({ email, password }));
+    } catch {
+      setError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.");
+      setLoading(false);
+      return;
+    }
 
     if (authError) {
       // Zwiększ licznik nieudanych prób
@@ -83,9 +90,16 @@ export default function Logowanie() {
   async function handleReset() {
     if (!email) { setError("Podaj adres email!"); return; }
     setLoading(true); setError("");
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://rynekpracownika.pl/nowe-haslo",
-    });
+    let resetError;
+    try {
+      ({ error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://rynekpracownika.pl/nowe-haslo",
+      }));
+    } catch {
+      setError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.");
+      setLoading(false);
+      return;
+    }
     setLoading(false);
     if (resetError) { setError("Błąd — sprawdź czy email jest poprawny"); return; }
     setView("resetSent");
