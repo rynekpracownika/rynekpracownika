@@ -220,6 +220,15 @@ export default function PanelPracownika() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/logowanie"); return; }
+      // Sprawdź 24h nieaktywności
+      const lastActive = localStorage.getItem("lastActive");
+      const now = Date.now();
+      if (lastActive && now - parseInt(lastActive) > 24 * 60 * 60 * 1000) {
+        await supabase.auth.signOut();
+        router.push("/logowanie?reason=inactive");
+        return;
+      }
+      localStorage.setItem("lastActive", now.toString());
       setUser(user);
 
       const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();

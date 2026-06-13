@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -35,6 +35,11 @@ export default function Logowanie() {
   const [error, setError] = useState("");
   const [view, setView] = useState("login");
   const router = useRouter();
+   const [inactiveLogout, setInactiveLogout] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setInactiveLogout(params.get("reason") === "inactive");
+  }, []);
 
   async function handleLogin() {
     if (!email || !password) { setError("Wypełnij wszystkie pola!"); return; }
@@ -111,6 +116,11 @@ export default function Logowanie() {
               <p style={{ fontSize:13, color:C.g600 }}>rynekpracownika.pl</p>
             </div>
 
+            {inactiveLogout && (
+              <div style={{ background:C.orange+"10", border:`1px solid ${C.orange}30`, borderRadius:8, padding:"12px 14px", marginBottom:16, fontSize:13, color:C.orange }}>
+                ⏱ Zostałeś wylogowany z powodu <strong>24h nieaktywności</strong>. Zaloguj się ponownie.
+              </div>
+            )}
             {isBlocked && (
               <div style={{ background:C.red+"10", border:`1px solid ${C.red}30`, borderRadius:8, padding:"12px 14px", marginBottom:16, fontSize:13, color:C.red }}>
                 🔒 Konto zablokowane na <strong>{minutesLeft} minut</strong> z powodu zbyt wielu nieudanych prób logowania.
