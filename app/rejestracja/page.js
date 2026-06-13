@@ -107,11 +107,17 @@ function RejestracjaForm() {
     }
 
     // Weryfikacja CAPTCHA
-    const captchaRes = await fetch("/api/verify-captcha", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: captchaToken }),
-    });
+    let captchaRes;
+    try {
+      captchaRes = await fetch("/api/verify-captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+    } catch {
+      setError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.");
+      return;
+    }
     if (!captchaRes.ok) {
       setError("Weryfikacja CAPTCHA nie powiodła się. Spróbuj ponownie.");
       return;
@@ -120,10 +126,17 @@ function RejestracjaForm() {
     setLoading(true);
     setError("");
 
-    const { data, error: authError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    });
+    let data, authError;
+    try {
+      ({ data, error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+      }));
+    } catch {
+      setError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.");
+      setLoading(false);
+      return;
+    }
 
     if (authError) {
       setError(authError.message);
