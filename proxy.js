@@ -2,11 +2,10 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import { authLimiter, nipLimiter, apiLimiter } from "./lib/ratelimit";
 
-export async function middleware(request) {
+export async function proxy(request) {
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   const path = request.nextUrl.pathname;
 
-  // Rate limiting
   if (path.startsWith("/api/")) {
     let limiter = apiLimiter;
     if (path.startsWith("/api/auth")) limiter = authLimiter;
@@ -21,7 +20,6 @@ export async function middleware(request) {
     }
   }
 
-  // Ochrona panelu admina
   if (path.startsWith("/admin") && !path.startsWith("/admin/login")) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     if (!token) {
