@@ -22,11 +22,18 @@ export default function Kontakt() {
   async function handleSend() {
     if (!form.name || !form.email || !form.message) { setError("Wypełnij wszystkie wymagane pola!"); return; }
     setLoading(true); setError("");
-    const res = await fetch("/api/email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type:"contact", to:"kontakt@rynekpracownika.pl", data:{ name:form.name, email:form.email, subject:form.subject||"Wiadomość z formularza kontaktowego", message:form.message } }),
-    });
+    let res;
+    try {
+      res = await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type:"contact", to:"kontakt@rynekpracownika.pl", data:{ name:form.name, email:form.email, subject:form.subject||"Wiadomość z formularza kontaktowego", message:form.message } }),
+      });
+    } catch {
+      setError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.");
+      setLoading(false);
+      return;
+    }
     setLoading(false);
     if (res.ok) setDone(true);
     else setError("Błąd wysyłki — spróbuj ponownie lub napisz na kontakt@rynekpracownika.pl");
