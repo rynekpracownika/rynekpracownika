@@ -274,7 +274,7 @@ function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, pr
       <div style={{ background:`linear-gradient(135deg,${C.navy},${C.blue})`, padding:"60px 20px", textAlign:"center" }}>
         <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:32, fontWeight:800, color:"#fff", marginBottom:14 }}>Masz zawód? Podaj swoje warunki.</h2>
         <p style={{ color:"rgba(255,255,255,0.72)", fontSize:15, marginBottom:32 }}>Ogłoszenie jest bezpłatne. Firmy płacą za kontakt do Ciebie.</p>
-        <button onClick={()=>setView("addad")} style={{ background:"#fff", color:C.navy, border:"none", padding:"13px 34px", borderRadius:10, fontSize:14, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.15)" }}>Dodaj ogłoszenie za darmo →</button>
+        <button onClick={()=>{ if(user) { window.location.href="/panel/pracownik"; } else { setShowAuthModal(true); } }} style={{ background:"#fff", color:C.navy, border:"none", padding:"13px 34px", borderRadius:10, fontSize:14, fontWeight:800, cursor:"pointer", fontFamily:"Sora,sans-serif", boxShadow:"0 6px 20px rgba(0,0,0,0.15)" }}>Dodaj ogłoszenie za darmo →</button>
       </div>
     </div>
   );
