@@ -47,6 +47,57 @@ const STATUSES = [
   { id:"rejected", label:"❌ Odrzucony", color:"#DC2626" },
 ];
 
+function DeleteAccountButton({ userId }) {
+  const [confirm1, setConfirm1] = useState(false);
+  const [confirm2, setConfirm2] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await supabase.from("unlocks").delete().eq("employer_id", userId);
+      await supabase.from("profiles").delete().eq("id", userId);
+      await supabase.auth.signOut();
+      await fetch("/api/delete-account", { method: "POST" });
+      router.push("/?deleted=1");
+    } catch {
+      setDeleting(false);
+      alert("Błąd podczas usuwania konta. Spróbuj ponownie.");
+    }
+  }
+
+  if (!confirm1) return (
+    <button onClick={() => setConfirm1(true)} style={{ background:"#DC262610", color:"#DC2626", border:"1px solid #DC262630", padding:"9px 18px", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer" }}>
+      🗑 Usuń konto
+    </button>
+  );
+
+  if (!confirm2) return (
+    <div style={{ background:"#DC262608", border:"1px solid #DC262630", borderRadius:10, padding:"16px" }}>
+      <div style={{ fontSize:13, fontWeight:700, color:"#DC2626", marginBottom:8 }}>Na pewno chcesz usunąć konto?</div>
+      <p style={{ fontSize:12, color:"#475569", marginBottom:14 }}>Wszystkie dane zostaną trwale usunięte. Tej operacji nie można cofnąć.</p>
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={() => setConfirm1(false)} style={{ padding:"8px 16px", borderRadius:8, border:"1.5px solid #CBD5E1", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#475569" }}>Anuluj</button>
+        <button onClick={() => setConfirm2(true)} style={{ padding:"8px 16px", borderRadius:8, border:"none", background:"#DC2626", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>Tak, usuń konto</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ background:"#DC262608", border:"1px solid #DC262630", borderRadius:10, padding:"16px" }}>
+      <div style={{ fontSize:13, fontWeight:700, color:"#DC2626", marginBottom:8 }}>⚠️ Ostatnie ostrzeżenie</div>
+      <p style={{ fontSize:12, color:"#475569", marginBottom:14 }}>Kliknij poniższy przycisk aby <strong>trwale</strong> usunąć konto i wszystkie dane.</p>
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={() => { setConfirm1(false); setConfirm2(false); }} style={{ padding:"8px 16px", borderRadius:8, border:"1.5px solid #CBD5E1", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#475569" }}>Anuluj</button>
+        <button onClick={handleDelete} disabled={deleting} style={{ padding:"8px 16px", borderRadius:8, border:"none", background:"#DC2626", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+          {deleting ? "Usuwanie..." : "🗑 Usuń trwale"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ProfileEdit({ user, profile, setProfile }) {
   const [phone, setPhone] = useState(profile?.phone || "");
   const [newPassword, setNewPassword] = useState("");
@@ -543,6 +594,14 @@ export default function PanelPracodawcy() {
                 {profile?.nip && <div style={{ fontSize:14, color:C.g800 }}>🏛️ NIP: {profile?.nip}</div>}
               </div>
               <ProfileEdit key={profile?.id} user={user} profile={profile} setProfile={setProfile} />
+           {/* Usuń konto */}
+              <div style={{ marginTop:28, paddingTop:28, borderTop:`1px solid ${C.g100}` }}>
+                <div style={{ fontSize:13, fontWeight:700, color:C.red, marginBottom:8, textTransform:"uppercase", letterSpacing:0.5 }}>Strefa niebezpieczna</div>
+                <p style={{ fontSize:12, color:C.g600, marginBottom:12, lineHeight:1.6 }}>
+                  Usunięcie konta jest nieodwracalne. Wszystkie Twoje dane zostaną trwale usunięte.
+                </p>
+                <DeleteAccountButton userId={user.id} />
+              </div>
             </div>
           </div>
         )}
