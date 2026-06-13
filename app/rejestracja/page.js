@@ -21,6 +21,7 @@ function RejestracjaForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const [rodo, setRodo] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -69,6 +70,9 @@ function RejestracjaForm() {
     }
     if (type === "employer" && !form.phone) {
       setError("Numer telefonu jest wymagany!"); return;
+    }
+    if (!rodo) {
+      setError("Musisz zaakceptować politykę prywatności i zgodę RODO."); return;
     }
     setLoading(true);
     setError("");
@@ -223,7 +227,27 @@ function RejestracjaForm() {
                 />
               </div>
             ))}
-            <div style={{ display:"flex", gap:10, marginTop:20 }}>
+
+            {/* RODO */}
+            <div style={{ margin:"20px 0", padding:"14px 16px", borderRadius:10, border:`1.5px solid ${rodo ? C.green : C.g200}`, background: rodo ? C.green+"08" : C.bg }}>
+              <label style={{ display:"flex", alignItems:"flex-start", gap:10, cursor:"pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={rodo}
+                  onChange={e => setRodo(e.target.checked)}
+                  style={{ accentColor:C.blue, width:16, height:16, marginTop:2, flexShrink:0 }}
+                />
+                <span style={{ fontSize:12, color:C.g600, lineHeight:1.6 }}>
+                  Zapoznałem/am się z{" "}
+                  <a href="/polityka-prywatnosci" target="_blank" style={{ color:C.blue, fontWeight:600 }}>Polityką prywatności</a>
+                  {" "}i{" "}
+                  <a href="/regulamin" target="_blank" style={{ color:C.blue, fontWeight:600 }}>Regulaminem</a>
+                  {" "}serwisu oraz wyrażam zgodę na przetwarzanie moich danych osobowych przez rynekpracownika.pl w celu świadczenia usług drogą elektroniczną. <span style={{ color:C.red, fontWeight:700 }}>*</span>
+                </span>
+              </label>
+            </div>
+
+            <div style={{ display:"flex", gap:10, marginTop:8 }}>
               <button onClick={() => setStep(type === "employer" ? 2 : 1)} style={{ padding:"11px 20px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:13, fontWeight:600, cursor:"pointer", color:C.g600 }}>← Wstecz</button>
               <button onClick={handleRegister} disabled={loading} style={{ flex:1, background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"11px", borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer" }}>
                 {loading ? "Rejestrowanie..." : "Utwórz konto →"}
