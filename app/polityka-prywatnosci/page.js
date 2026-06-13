@@ -57,7 +57,7 @@ export default function PolitykaPrywatnosci() {
 
           <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:18, fontWeight:700, color:C.g800 }}>§4. Jak długo przechowujemy dane</h2>
           <ul>
-            <li><strong>Konto Użytkownika</strong> — przez czas istnienia konta + 3 lata po usunięciu</li>
+            <li><strong>Konto Użytkownika</strong> — przez czas istnienia konta + 3 lata po usunięciu (w celach rozliczeniowych i ochrony przed roszczeniami)</li>
             <li><strong>Ogłoszenia</strong> — 30 dni, następnie usuwane automatycznie</li>
             <li><strong>Dane płatności</strong> — 5 lat (obowiązek podatkowy)</li>
             <li><strong>Logi systemowe</strong> — 90 dni</li>
