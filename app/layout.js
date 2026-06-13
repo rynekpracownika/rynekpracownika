@@ -29,38 +29,43 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap"
         />
 
-{/* Schema.org JSON-LD */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "name": "rynekpracownika.pl",
-          "url": "https://rynekpracownika.pl",
-          "description": "Pierwsza polska platforma odwróconych ogłoszeń o pracę. Dodaj ogłoszenie ze swoją stawką. Firmy dzwonią do Ciebie.",
-          "inLanguage": "pl",
-          "publisher": {
-            "@type": "Organization",
-            "name": "rynekpracownika.pl",
-            "url": "https://rynekpracownika.pl",
-            "logo": {
-              "@type": "ImageObject",
-              "url": "https://rynekpracownika.pl/og-image.png"
-            },
-            "contactPoint": {
-              "@type": "ContactPoint",
-              "email": "kontakt@rynekpracownika.pl",
-              "contactType": "customer service",
-              "availableLanguage": "Polish"
-            }
-          },
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": {
-              "@type": "EntryPoint",
-              "urlTemplate": "https://rynekpracownika.pl/?search={search_term_string}"
-            },
-            "query-input": "required name=search_term_string"
-          }
-        })}} />
+        {/* Schema.org JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: `{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "rynekpracownika.pl",
+  "url": "https://rynekpracownika.pl",
+  "description": "Pierwsza polska platforma odwróconych ogłoszeń o pracę. Dodaj ogłoszenie ze swoją stawką. Firmy dzwonią do Ciebie.",
+  "inLanguage": "pl",
+  "publisher": {
+    "@type": "Organization",
+    "name": "rynekpracownika.pl",
+    "url": "https://rynekpracownika.pl",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://rynekpracownika.pl/og-image.png"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "kontakt@rynekpracownika.pl",
+      "contactType": "customer service",
+      "availableLanguage": "Polish"
+    }
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://rynekpracownika.pl/?search={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}`
+          }}
+        />
 
         {/* Google Analytics */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-V1K03LG7Z9"></script>
@@ -93,9 +98,9 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Providers>
-  {children}
-  <CookieBanner />
-</Providers>
+          {children}
+          <CookieBanner />
+        </Providers>
       </body>
     </html>
   );
