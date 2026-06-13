@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,8 @@ const C = {
 
 function RejestracjaForm() {
   const [step, setStep] = useState(1);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef(null);
   const [type, setType] = useState("");
   const [form, setForm] = useState({ name:"", email:"", phone:"", password:"", password2:"" });
   const [nip, setNip] = useState("");
@@ -32,6 +34,14 @@ function RejestracjaForm() {
   }, []);
 
   const up = (k, v) => setForm(f => ({ ...f, [k]: v }));
+useEffect(() => {
+    if (step === 3 && window.turnstile && turnstileRef.current) {
+      window.turnstile.render("#turnstile-container", {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        callback: (token) => setCaptchaToken(token),
+      });
+    }
+  }, [step]);
 
   async function checkNip() {
     const cleaned = nip.replace(/[-\s]/g, "");
@@ -73,6 +83,20 @@ function RejestracjaForm() {
     }
     if (!rodo) {
       setError("Musisz zaakceptować politykę prywatności i zgodę RODO."); return;
+    }
+    if (!captchaToken) {
+      setError("Potwierdź że nie jesteś robotem!"); return;
+    }
+
+    // Weryfikacja CAPTCHA
+    const captchaRes = await fetch("/api/verify-captcha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: captchaToken }),
+    });
+    if (!captchaRes.ok) {
+      setError("Weryfikacja CAPTCHA nie powiodła się. Spróbuj ponownie.");
+      return;
     }
     setLoading(true);
     setError("");
@@ -227,6 +251,9 @@ function RejestracjaForm() {
                 />
               </div>
             ))}
+
+{/* CAPTCHA */}
+            <div style={{ marginBottom:16 }} ref={turnstileRef} id="turnstile-container" />
 
             {/* RODO */}
             <div style={{ margin:"20px 0", padding:"14px 16px", borderRadius:10, border:`1.5px solid ${rodo ? C.green : C.g200}`, background: rodo ? C.green+"08" : C.bg }}>

@@ -95,6 +95,8 @@ export default function RootLayout({ children }) {
         <meta name="twitter:title" content="RynekPracownika.pl – Odwrócone ogłoszenia o pracę" />
         <meta name="twitter:description" content="Dodaj ogłoszenie ze swoją stawką. Firmy dzwonią do Ciebie." />
         <meta name="twitter:image" content="https://rynekpracownika.pl/og-image.png" />
+        {/* Cloudflare Turnstile */}
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       </head>
       <body>
         <Providers>
