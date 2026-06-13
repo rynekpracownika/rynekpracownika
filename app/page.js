@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-
+import CityAutocomplete from "./components/CityAutocomplete";
 const C = {
   blue:"#1A73E8", navy:"#0D47A1", bg:"#F5F7FA",
   white:"#FFFFFF", g50:"#F8FAFC", g100:"#E8ECF0",
@@ -360,29 +360,64 @@ function AdCard({ ad, preview, onUnlock, onReport }) {
   );
 }
 
+const ROLES = {
+  all: [],
+  budowlanka: ["Elektryk","Hydraulik","Murarz","Tynkarz","Malarz","Dekarz","Cieśla","Glazurnik","Spawacz"],
+  produkcja:  ["Operator maszyn","Kontroler jakości","Magazynier","Pakowacz","Pracownik linii"],
+  logistyka:  ["Kierowca C+E","Kierowca B","Kurier","Spedytor","Magazynier"],
+  handel:     ["Sprzedawca","Kasjer","Doradca klienta","Handlowiec","Przedstawiciel"],
+  uslugi:     ["Mechanik","Fryzjer","Kucharz","Kelner","Ochroniarz","Sprzątaczka"],
+  it:         ["Programista","Administrator IT","Helpdesk","Tester","DevOps"],
+  biuro:      ["Księgowa","Asystentka","HR","Recepcjonistka","Prawnik"],
+  edukacja:   ["Nauczyciel","Korepetytor","Trener","Coach"],
+};
+
 function AdsView({ ads: realAds=[], initialCat="all" }) {
   const [search, setSearch] = useState("");
   const [region, setRegion] = useState("Cała Polska");
   const [catFilter, setCatFilter] = useState(initialCat);
+  const [roleFilter, setRoleFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [rateMin, setRateMin] = useState("");
+  const [rateMax, setRateMax] = useState("");
+  const [city, setCity] = useState("");
   const [unlocked, setUnlocked] = useState({});
   const [showUnlock, setShowUnlock] = useState(null);
 
+  const availableRoles = catFilter !== "all" ? ROLES[catFilter] || [] : [];
+
+  function resetFilters() {
+    setSearch(""); setRegion("Cała Polska"); setCatFilter("all");
+    setRoleFilter("all"); setSortBy("newest"); setRemoteOnly(false);
+    setRateMin(""); setRateMax(""); setCity("");
+  }
+
+  const hasFilters = search || region !== "Cała Polska" || catFilter !== "all" || roleFilter !== "all" || remoteOnly || rateMin || rateMax || city;
+
   const filtered = realAds.filter(a=>{
     const q = search.toLowerCase();
+    const min = rateMin ? parseInt(rateMin) : null;
+    const max = rateMax ? parseInt(rateMax) : null;
     return (
-      (!search || a.role.toLowerCase().includes(q) || (a.skills||[]).some(s=>s.toLowerCase().includes(q)) || (a.city||"").toLowerCase().includes(q)) &&
+      (!search || a.role?.toLowerCase().includes(q) || (a.skills||[]).some(s=>s.toLowerCase().includes(q)) || (a.city||"").toLowerCase().includes(q)) &&
       (region==="Cała Polska" || a.region===region) &&
+      (!city || a.city?.toLowerCase() === city.toLowerCase()) &&
       (catFilter==="all" || a.cat===catFilter || a.category===catFilter) &&
-      (!remoteOnly || a.remote)
+      (roleFilter==="all" || a.role===roleFilter) &&
+      (!remoteOnly || a.remote) &&
+      (!min || (a.rate_from||0) >= min) &&
+      (!max || (a.rate_from||0) <= max)
     );
   }).sort((a,b)=>{
-    if(sortBy==="newest") return b.id-a.id;
+    if(sortBy==="newest") return new Date(b.created_at||0) - new Date(a.created_at||0);
+    if(sortBy==="rate_desc") return (b.rate_from||0)-(a.rate_from||0);
+    if(sortBy==="rate_asc") return (a.rate_from||0)-(b.rate_from||0);
     if(sortBy==="offers") return (b.offers||0)-(a.offers||0);
-    if(sortBy==="premium") return (b.premium?1:0)-(a.premium?1:0);
     return 0;
   });
+
+  const selectStyle = { padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" };
 
   return (
     <div style={{ maxWidth:1200, margin:"0 auto", padding:"32px 20px" }}>
@@ -412,32 +447,47 @@ function AdsView({ ads: realAds=[], initialCat="all" }) {
 
       <div style={{ background:C.white, borderRadius:14, padding:"16px 20px", border:`1px solid ${C.g100}`, marginBottom:20, boxShadow:"0 2px 10px rgba(26,115,232,0.05)" }}>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <input placeholder="🔍  Zawód, umiejętność, miasto..." value={search} onChange={e=>setSearch(e.target.value)} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:"#1E293B" }} />
+          <input placeholder="🔍 Zawód, umiejętność, miasto..." value={search} onChange={e=>setSearch(e.target.value)} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, outline:"none", background:C.bg, color:"#1E293B" }} />
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-            <select value={region} onChange={e=>setRegion(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }}>
+            <select value={region} onChange={e=>setRegion(e.target.value)} style={{ flex:1, minWidth:140, ...selectStyle }}>
               {REGIONS.map(r=><option key={r}>{r}</option>)}
             </select>
-            <select value={catFilter} onChange={e=>setCatFilter(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }}>
+            <CityAutocomplete value={city} onChange={v=>setCity(v)} region={region==="Cała Polska" ? "" : region} />
+            <select value={catFilter} onChange={e=>{ setCatFilter(e.target.value); setRoleFilter("all"); }} style={{ flex:1, minWidth:140, ...selectStyle }}>
               <option value="all">Wszystkie branże</option>
               {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </select>
-            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ flex:1, minWidth:120, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }}>
-              <option value="newest">Najnowsze</option>
-              <option value="offers">Najpopularniejsze</option>
-              <option value="premium">Wyróżnione</option>
+            <select value={roleFilter} onChange={e=>setRoleFilter(e.target.value)} disabled={catFilter==="all"} style={{ flex:1, minWidth:140, ...selectStyle, opacity:catFilter==="all"?0.5:1 }}>
+              <option value="all">{catFilter==="all" ? "Wybierz branżę" : "Wszystkie zawody"}</option>
+              {availableRoles.map(r=><option key={r} value={r}>{r}</option>)}
             </select>
+            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{ flex:1, minWidth:120, ...selectStyle }}>
+              <option value="newest">Najnowsze</option>
+              <option value="rate_desc">Stawka: najwyższa</option>
+              <option value="rate_asc">Stawka: najniższa</option>
+              <option value="offers">Najpopularniejsze</option>
+            </select>
+          </div>
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+            <input type="number" placeholder="Stawka od (zł/h)" value={rateMin} onChange={e=>setRateMin(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }} />
+            <input type="number" placeholder="Stawka do (zł/h)" value={rateMax} onChange={e=>setRateMax(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }} />
             <label style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer", fontSize:13, fontWeight:500 }}>
               <input type="checkbox" checked={remoteOnly} onChange={e=>setRemoteOnly(e.target.checked)} style={{ accentColor:C.blue, width:15, height:15 }} />
               Tylko zdalne
             </label>
+            {hasFilters && (
+              <button onClick={resetFilters} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600, whiteSpace:"nowrap" }}>
+                🔄 Resetuj filtry
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:20 }}>
-        <button onClick={()=>setCatFilter("all")} style={{ padding:"6px 14px", borderRadius:20, border:`1.5px solid ${catFilter==="all"?C.blue:C.g200}`, background:catFilter==="all"?C.blue:C.white, color:catFilter==="all"?"#fff":C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>Wszystkie</button>
+        <button onClick={()=>{ setCatFilter("all"); setRoleFilter("all"); }} style={{ padding:"6px 14px", borderRadius:20, border:`1.5px solid ${catFilter==="all"?C.blue:C.g200}`, background:catFilter==="all"?C.blue:C.white, color:catFilter==="all"?"#fff":C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>Wszystkie</button>
         {CATEGORIES.map(c=>(
-          <button key={c.id} onClick={()=>setCatFilter(c.id)} style={{ padding:"6px 14px", borderRadius:20, border:`1.5px solid ${catFilter===c.id?C.blue:C.g200}`, background:catFilter===c.id?C.blue:C.white, color:catFilter===c.id?"#fff":C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>{c.icon} {c.label}</button>
+          <button key={c.id} onClick={()=>{ setCatFilter(c.id); setRoleFilter("all"); }} style={{ padding:"6px 14px", borderRadius:20, border:`1.5px solid ${catFilter===c.id?C.blue:C.g200}`, background:catFilter===c.id?C.blue:C.white, color:catFilter===c.id?"#fff":C.g600, fontSize:12, fontWeight:600, cursor:"pointer" }}>{c.icon} {c.label}</button>
         ))}
       </div>
 
