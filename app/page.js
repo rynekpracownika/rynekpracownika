@@ -268,8 +268,28 @@ function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, pr
   </div>
   <div className="grid-3">
     {realAds === null ? (
-  <div style={{ textAlign:"center", padding:"40px 20px", color:C.g400 }}>
-    <div style={{ fontSize:13 }}>Ładowanie ogłoszeń...</div>
+  <div className="grid-3">
+    {[1,2,3].map(i=>(
+      <div key={i} style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 10px rgba(26,115,232,0.04)" }}>
+        <div style={{ display:"flex", gap:12, marginBottom:12 }}>
+          <div style={{ width:44, height:44, borderRadius:"50%", background:C.g100, flexShrink:0 }} />
+          <div style={{ flex:1 }}>
+            <div style={{ height:14, background:C.g100, borderRadius:6, marginBottom:8, width:"70%" }} />
+            <div style={{ height:11, background:C.g100, borderRadius:6, width:"50%" }} />
+          </div>
+          <div style={{ width:80 }}>
+            <div style={{ height:14, background:C.g100, borderRadius:6, marginBottom:6 }} />
+            <div style={{ height:11, background:C.g100, borderRadius:6 }} />
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+          {[60,80,70].map((w,j)=>(
+            <div key={j} style={{ height:20, background:C.g100, borderRadius:6, width:w }} />
+          ))}
+        </div>
+        <div style={{ height:40, background:C.g100, borderRadius:8 }} />
+      </div>
+    ))}
   </div>
 ) : realAds.length > 0 ? (
   realAds.slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview onReport={()=>setReportAd(ad)} />)
