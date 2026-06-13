@@ -7,7 +7,7 @@ import CityAutocomplete from "@/app/components/CityAutocomplete";
 const C = {
   blue:"#1A73E8", navy:"#0D47A1", bg:"#F5F7FA",
   white:"#FFFFFF", g100:"#E8ECF0", g200:"#CBD5E1",
-  g400:"#94A3B8", g600:"#475569", g800:"#1E293B",
+  g400:"#475569", g600:"#475569", g800:"#1E293B",
   green:"#16A34A", orange:"#EA580C", red:"#DC2626", yellow:"#F59E0B",
 };
 
