@@ -284,8 +284,41 @@ export default function PanelPracodawcy() {
   }
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ fontSize:14, color:C.g600 }}>Ładowanie...</div>
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
+      <div style={{ background:"#fff", borderBottom:`1px solid #E8ECF0`, padding:"0 20px", height:56, display:"flex", alignItems:"center", boxShadow:"0 1px 8px rgba(0,0,0,0.05)" }}>
+        <div style={{ width:160, height:20, background:"#E8ECF0", borderRadius:6 }} />
+        <div style={{ flex:1 }} />
+        <div style={{ width:80, height:32, background:"#E8ECF0", borderRadius:8 }} />
+      </div>
+      <div style={{ maxWidth:1000, margin:"0 auto", padding:"32px 20px" }}>
+        <div style={{ display:"flex", gap:8, marginBottom:28 }}>
+          {[1,2,3,4].map(i=>(
+            <div key={i} style={{ width:140, height:38, background:"#E8ECF0", borderRadius:10 }} />
+          ))}
+        </div>
+        <div style={{ background:"#fff", borderRadius:14, padding:"16px 20px", border:`1px solid #E8ECF0`, marginBottom:20 }}>
+          <div style={{ height:40, background:"#E8ECF0", borderRadius:8, marginBottom:10 }} />
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+            {[1,2,3].map(i=><div key={i} style={{ height:40, background:"#E8ECF0", borderRadius:8 }} />)}
+          </div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          {[1,2,3].map(i=>(
+            <div key={i} style={{ background:"#fff", borderRadius:14, padding:"20px", border:`1px solid #E8ECF0` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
+                <div>
+                  <div style={{ width:200, height:16, background:"#E8ECF0", borderRadius:6, marginBottom:8 }} />
+                  <div style={{ width:140, height:12, background:"#E8ECF0", borderRadius:6 }} />
+                </div>
+                <div style={{ width:120, height:16, background:"#E8ECF0", borderRadius:6 }} />
+              </div>
+              <div style={{ display:"flex", gap:6 }}>
+                {[70,90,60].map((w,j)=><div key={j} style={{ width:w, height:22, background:"#E8ECF0", borderRadius:6 }} />)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
