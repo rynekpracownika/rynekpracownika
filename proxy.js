@@ -6,7 +6,13 @@ export async function proxy(request) {
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   const path = request.nextUrl.pathname;
 
-  if (path.startsWith("/api/")) {
+  const skipRateLimit = [
+    "/api/auth/session",
+    "/api/auth/_log",
+    "/api/verify-captcha",
+  ];
+
+  if (path.startsWith("/api/") && !skipRateLimit.some(p => path.startsWith(p))) {
     let limiter = apiLimiter;
     if (path.startsWith("/api/auth")) limiter = authLimiter;
     if (path.startsWith("/api/nip")) limiter = nipLimiter;
