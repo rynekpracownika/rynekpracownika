@@ -241,10 +241,20 @@ export default function PanelPracownika() {
       const { data: myAds } = await supabase.from("ads").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       setAds(myAds || []);
 
-      const { data: unlocksData } = await supabase
-        .from("unlocks")
-        .select("ad_id, created_at, employer_id, profiles!unlocks_employer_id_fkey(name, email)")
-        .order("created_at", { ascending: false });
+      const { data: myAdsIds } = await supabase
+        .from("ads")
+        .select("id")
+        .eq("user_id", user.id);
+
+      const adsIds = (myAdsIds || []).map(a => a.id);
+
+      const { data: unlocksData } = adsIds.length > 0
+        ? await supabase
+            .from("unlocks")
+            .select("ad_id, created_at, employer_id, profiles!unlocks_employer_id_fkey(name, email)")
+            .in("ad_id", adsIds)
+            .order("created_at", { ascending: false })
+        : { data: [] };
       setUnlocks(unlocksData || []);
 
       setLoading(false);
