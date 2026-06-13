@@ -267,7 +267,15 @@ function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, pr
     <button onClick={()=>setView("ads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie →</button>
   </div>
   <div className="grid-3">
-    {(realAds.length>0?realAds:ADS).slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview onReport={()=>setReportAd(ad)} />)}
+    {realAds === null ? (
+  <div style={{ textAlign:"center", padding:"40px 20px", color:C.g400 }}>
+    <div style={{ fontSize:13 }}>Ładowanie ogłoszeń...</div>
+  </div>
+) : realAds.length > 0 ? (
+  realAds.slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview onReport={()=>setReportAd(ad)} />)
+) : (
+  ADS.slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview onReport={()=>setReportAd(ad)} />)
+)}
   </div>
 </div>
 
@@ -837,7 +845,7 @@ function ReportModal({ ad, onClose, user }) {
 
 export default function App() {
   const [view, setView] = useState("home");
-  const [realAds, setRealAds] = useState([]);
+  const [realAds, setRealAds] = useState(null);
   const [activeCat, setActiveCat] = useState("all");
   const [adsCount, setAdsCount] = useState(0);
   const [user, setUser] = useState(null);
