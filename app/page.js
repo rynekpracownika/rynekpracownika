@@ -180,7 +180,10 @@ function Navbar({ view, setView }) {
   );
 }
 
+
+
 function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, profile, setShowAuthModal, setReportAd }) {
+  
   const stats = [
     { n:adsCount>0?`${adsCount}`:"0", t:"Aktywnych ogłoszeń" },
     { n:"16 woj.", t:"Zasięg regionalny" },
@@ -262,42 +265,41 @@ function HomeView({ setView, setActiveCat, ads: realAds=[], adsCount=0, user, pr
       </div>
 
       <div style={{ maxWidth:1200, margin:"0 auto", padding:"52px 20px" }}>
-  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:28 }}>
-    <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:24, fontWeight:800, color:C.g800 }}>Najnowsze ogłoszenia</h2>
-    <button onClick={()=>setView("ads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie →</button>
-  </div>
-  <div className="grid-3">
-    {realAds === null ? (
-  <div className="grid-3">
-    {[1,2,3].map(i=>(
-      <div key={i} style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 10px rgba(26,115,232,0.04)" }}>
-        <div style={{ display:"flex", gap:12, marginBottom:12 }}>
-          <div style={{ width:44, height:44, borderRadius:"50%", background:C.g100, flexShrink:0 }} />
-          <div style={{ flex:1 }}>
-            <div style={{ height:14, background:C.g100, borderRadius:6, marginBottom:8, width:"70%" }} />
-            <div style={{ height:11, background:C.g100, borderRadius:6, width:"50%" }} />
-          </div>
-          <div style={{ width:80 }}>
-            <div style={{ height:14, background:C.g100, borderRadius:6, marginBottom:6 }} />
-            <div style={{ height:11, background:C.g100, borderRadius:6 }} />
-          </div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:24, fontWeight:800, color:C.g800 }}>Najnowsze ogłoszenia</h2>
+          <button onClick={()=>setView("ads")} style={{ background:"transparent", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer" }}>Zobacz wszystkie →</button>
         </div>
-        <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-          {[60,80,70].map((w,j)=>(
-            <div key={j} style={{ height:20, background:C.g100, borderRadius:6, width:w }} />
-          ))}
+        
+        <div className="grid-3">
+         {realAds === null ? (
+  [1,2,3].map(i=>(
+    <div key={i} style={{ background:C.white, borderRadius:14, padding:"18px 20px", border:`1px solid ${C.g100}`, boxShadow:"0 2px 10px rgba(26,115,232,0.04)" }}>
+      <div style={{ display:"flex", gap:12, marginBottom:12 }}>
+        <div style={{ width:44, height:44, borderRadius:"50%", background:C.g100, flexShrink:0 }} />
+        <div style={{ flex:1 }}>
+          <div style={{ height:14, background:C.g100, borderRadius:6, marginBottom:8, width:"70%" }} />
+          <div style={{ height:11, background:C.g100, borderRadius:6, width:"50%" }} />
         </div>
-        <div style={{ height:40, background:C.g100, borderRadius:8 }} />
+        <div style={{ width:80 }}>
+          <div style={{ height:14, background:C.g100, borderRadius:6, marginBottom:6 }} />
+          <div style={{ height:11, background:C.g100, borderRadius:6 }} />
+        </div>
       </div>
-    ))}
-  </div>
+      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+        {[60,80,70].map((w,j)=>(
+          <div key={j} style={{ height:20, background:C.g100, borderRadius:6, width:w }} />
+        ))}
+      </div>
+      <div style={{ height:40, background:C.g100, borderRadius:8 }} />
+    </div>
+  ))
 ) : realAds.length > 0 ? (
   realAds.slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview onReport={()=>setReportAd(ad)} />)
 ) : (
   ADS.slice(0,6).map(ad=><AdCard key={ad.id} ad={ad} preview onReport={()=>setReportAd(ad)} />)
 )}
-  </div>
-</div>
+        </div>
+      </div>
 
       <div style={{ background:`linear-gradient(135deg,${C.navy},${C.blue})`, padding:"60px 20px", textAlign:"center" }}>
         <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:32, fontWeight:800, color:"#fff", marginBottom:14 }}>Masz zawód? Podaj swoje warunki.</h2>
