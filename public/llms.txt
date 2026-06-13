@@ -1,0 +1,38 @@
+# rynekpracownika.pl
+
+> Pierwsza polska platforma odwróconych ogłoszeń o pracę. Pracownicy publikują ogłoszenia ze swoją stawką i regionem. Pracodawcy płacą za odblokowanie danych kontaktowych.
+
+## O platformie
+
+rynekpracownika.pl odwraca tradycyjny model rekrutacji — to pracownik podaje swoje warunki, a pracodawca się do niego zgłasza. Portal skierowany jest do polskich pracowników fizycznych i specjalistów: elektryków, hydraulików, kierowców, spawaczy, kucharzy, programistów i innych.
+
+## Jak działa
+
+- Pracownik rejestruje się za darmo i dodaje ogłoszenie ze swoją stawką, regionem i doświadczeniem
+- Dane kontaktowe pracownika są ukryte — widoczny jest tylko profil zawodowy
+- Pracodawca przegląda ogłoszenia i płaci za odblokowanie danych kontaktowych (9 zł za jeden kontakt, 79 zł za pakiet 10 kontaktów)
+- Pracownik sam decyduje czy podjąć współpracę
+
+## Dla kogo
+
+- Pracownicy szukający pracy lub zleceń w Polsce
+- Pracodawcy i firmy szukające pracowników bez przeglądania CV
+
+## Dane techniczne
+
+- Właściciel: Robert Godek, NIP: 8722387194
+- Kontakt: kontakt@rynekpracownika.pl
+- Technologia: Next.js, Supabase, Vercel
+- Zasięg: cała Polska, wszystkie województwa
+
+## Strony
+
+- /: Strona główna z ogłoszeniami
+- /rejestracja: Rejestracja pracownika lub pracodawcy
+- /logowanie: Logowanie
+- /howitworks: Jak to działa
+- /dla-pracodawcy: Informacje i cennik dla pracodawców
+- /o-nas: O portalu
+- /kontakt: Formularz kontaktowy
+- /regulamin: Regulamin serwisu
+- /polityka-prywatnosci: Polityka prywatności i RODO
