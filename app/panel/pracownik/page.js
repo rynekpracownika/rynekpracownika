@@ -353,8 +353,45 @@ export default function PanelPracownika() {
   }
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ fontSize:14, color:C.g600 }}>Ładowanie...</div>
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"DM Sans,sans-serif" }}>
+      <div style={{ background:"#fff", borderBottom:`1px solid #E8ECF0`, padding:"0 20px", height:56, display:"flex", alignItems:"center", boxShadow:"0 1px 8px rgba(0,0,0,0.05)" }}>
+        <div style={{ width:160, height:20, background:"#E8ECF0", borderRadius:6 }} />
+        <div style={{ flex:1 }} />
+        <div style={{ width:80, height:32, background:"#E8ECF0", borderRadius:8 }} />
+      </div>
+      <div style={{ maxWidth:900, margin:"0 auto", padding:"32px 20px" }}>
+        <div style={{ display:"flex", gap:8, marginBottom:28 }}>
+          {[1,2,3,4].map(i=>(
+            <div key={i} style={{ width:140, height:38, background:"#E8ECF0", borderRadius:10 }} />
+          ))}
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <div style={{ width:180, height:24, background:"#E8ECF0", borderRadius:6 }} />
+          <div style={{ width:80, height:36, background:"#E8ECF0", borderRadius:8 }} />
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          {[1,2,3].map(i=>(
+            <div key={i} style={{ background:"#fff", borderRadius:14, padding:"18px 20px", border:`1px solid #E8ECF0` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                <div>
+                  <div style={{ width:200, height:15, background:"#E8ECF0", borderRadius:6, marginBottom:8 }} />
+                  <div style={{ width:150, height:12, background:"#E8ECF0", borderRadius:6 }} />
+                </div>
+                <div style={{ display:"flex", gap:6 }}>
+                  <div style={{ width:60, height:24, background:"#E8ECF0", borderRadius:20 }} />
+                  <div style={{ width:50, height:24, background:"#E8ECF0", borderRadius:20 }} />
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+                {[80,100,70].map((w,j)=><div key={j} style={{ width:w, height:22, background:"#E8ECF0", borderRadius:6 }} />)}
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                {[1,2,3].map(i=><div key={i} style={{ width:80, height:28, background:"#E8ECF0", borderRadius:7 }} />)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
