@@ -41,7 +41,60 @@ function AdStatusBadge({ expiresAt }) {
     </div>
   );
 }
+function DeleteAccountButton({ userId }) {
+  const [confirm1, setConfirm1] = useState(false);
+  const [confirm2, setConfirm2] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
 
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      // Usuń ogłoszenia
+      await supabase.from("ads").delete().eq("user_id", userId);
+      // Usuń profil
+      await supabase.from("profiles").delete().eq("id", userId);
+      // Wyloguj
+      await supabase.auth.signOut();
+      // Usuń konto auth przez API
+      await fetch("/api/delete-account", { method: "POST" });
+      router.push("/?deleted=1");
+    } catch {
+      setDeleting(false);
+      alert("Błąd podczas usuwania konta. Spróbuj ponownie.");
+    }
+  }
+
+  if (!confirm1) return (
+    <button onClick={() => setConfirm1(true)} style={{ background:"#DC262610", color:"#DC2626", border:"1px solid #DC262630", padding:"9px 18px", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer" }}>
+      🗑 Usuń konto
+    </button>
+  );
+
+  if (!confirm2) return (
+    <div style={{ background:"#DC262608", border:"1px solid #DC262630", borderRadius:10, padding:"16px" }}>
+      <div style={{ fontSize:13, fontWeight:700, color:"#DC2626", marginBottom:8 }}>Na pewno chcesz usunąć konto?</div>
+      <p style={{ fontSize:12, color:"#475569", marginBottom:14 }}>Wszystkie ogłoszenia i dane zostaną trwale usunięte. Tej operacji nie można cofnąć.</p>
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={() => setConfirm1(false)} style={{ padding:"8px 16px", borderRadius:8, border:"1.5px solid #CBD5E1", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#475569" }}>Anuluj</button>
+        <button onClick={() => setConfirm2(true)} style={{ padding:"8px 16px", borderRadius:8, border:"none", background:"#DC2626", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>Tak, usuń konto</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ background:"#DC262608", border:"1px solid #DC262630", borderRadius:10, padding:"16px" }}>
+      <div style={{ fontSize:13, fontWeight:700, color:"#DC2626", marginBottom:8 }}>⚠️ Ostatnie ostrzeżenie</div>
+      <p style={{ fontSize:12, color:"#475569", marginBottom:14 }}>Kliknij poniższy przycisk aby <strong>trwale</strong> usunąć konto i wszystkie dane.</p>
+      <div style={{ display:"flex", gap:8 }}>
+        <button onClick={() => { setConfirm1(false); setConfirm2(false); }} style={{ padding:"8px 16px", borderRadius:8, border:"1.5px solid #CBD5E1", background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#475569" }}>Anuluj</button>
+        <button onClick={handleDelete} disabled={deleting} style={{ padding:"8px 16px", borderRadius:8, border:"none", background:"#DC2626", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+          {deleting ? "Usuwanie..." : "🗑 Usuń trwale"}
+        </button>
+      </div>
+    </div>
+  );
+}
 function ProfileEdit({ user, profile, setProfile }) {
   const [phone, setPhone] = useState(profile?.phone || "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -127,6 +180,14 @@ function ProfileEdit({ user, profile, setProfile }) {
         <button onClick={handleSavePassword} disabled={savingPassword} style={{ background:`linear-gradient(135deg,${C2.blue},${C2.navy})`, color:"#fff", border:"none", padding:"10px 20px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>
           {savingPassword ? "Zapisywanie..." : "Zmień hasło"}
         </button>
+      </div>
+      {/* Usuń konto */}
+      <div style={{ marginTop:28, paddingTop:28, borderTop:`1px solid #E8ECF0` }}>
+        <div style={{ fontSize:13, fontWeight:700, color:"#DC2626", marginBottom:8, textTransform:"uppercase", letterSpacing:0.5 }}>Strefa niebezpieczna</div>
+        <p style={{ fontSize:12, color:"#475569", marginBottom:12, lineHeight:1.6 }}>
+          Usunięcie konta jest nieodwracalne. Wszystkie Twoje ogłoszenia i dane zostaną trwale usunięte.
+        </p>
+        <DeleteAccountButton userId={user.id} />
       </div>
     </div>
   );
