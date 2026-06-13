@@ -34,12 +34,30 @@ function RejestracjaForm() {
   }, []);
 
   const up = (k, v) => setForm(f => ({ ...f, [k]: v }));
-useEffect(() => {
-    if (step === 3 && window.turnstile && turnstileRef.current) {
-      window.turnstile.render("#turnstile-container", {
-        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-        callback: (token) => setCaptchaToken(token),
-      });
+
+  useEffect(() => {
+    if (step !== 3) return;
+
+    const renderTurnstile = () => {
+      const container = document.getElementById("turnstile-container");
+      if (window.turnstile && container) {
+        window.turnstile.render("#turnstile-container", {
+          sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+          callback: (token) => setCaptchaToken(token),
+        });
+      }
+    };
+
+    if (window.turnstile) {
+      renderTurnstile();
+    } else {
+      const interval = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(interval);
+          renderTurnstile();
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }
   }, [step]);
 
@@ -98,6 +116,7 @@ useEffect(() => {
       setError("Weryfikacja CAPTCHA nie powiodła się. Spróbuj ponownie.");
       return;
     }
+
     setLoading(true);
     setError("");
 
@@ -113,7 +132,7 @@ useEffect(() => {
     }
 
     if (data.user) {
-      await supabase.from("profiles").insert({
+      const { error: profileError } = await supabase.from("profiles").insert({
         id: data.user.id,
         type: type,
         name: form.name,
@@ -123,6 +142,12 @@ useEffect(() => {
         company_name: type === "employer" ? companyData?.name : null,
         verified: type === "employer" ? nipStatus === "valid" : false,
       });
+
+      if (profileError) {
+        setError("Błąd zapisu profilu: " + profileError.message);
+        setLoading(false);
+        return;
+      }
     }
 
     await fetch("/api/email", {
@@ -252,7 +277,7 @@ useEffect(() => {
               </div>
             ))}
 
-{/* CAPTCHA */}
+            {/* CAPTCHA */}
             <div style={{ marginBottom:16 }} ref={turnstileRef} id="turnstile-container" />
 
             {/* RODO */}
