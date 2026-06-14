@@ -10,6 +10,7 @@ export async function proxy(request) {
     "/api/auth/session",
     "/api/auth/_log",
     "/api/verify-captcha",
+    "/api/email",
   ];
 
   if (path.startsWith("/api/") && !skipRateLimit.some(p => path.startsWith(p))) {
