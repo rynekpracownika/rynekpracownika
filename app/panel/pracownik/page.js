@@ -27,6 +27,18 @@ const REGIONS = [
   "Pomorskie","Śląskie","Świętokrzyskie","Warmińsko-Mazurskie","Wielkopolskie","Zachodniopomorskie",
 ];
 
+const EMPTY_FORM = {
+  cat:"", role:"", exp:"", rateFrom:"", rateTo:"", rateType:"hourly",
+  region:"", city:"", avail:"", contract:[], remote:false,
+  skills:"", desc:"",
+};
+
+function rateLabel(ad) {
+  const unit = ad.rate_type === "monthly" ? "zł/mies." : "zł/h";
+  if (ad.rate_from == null) return "";
+  return `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ""} ${unit}`;
+}
+
 function AdStatusBadge({ expiresAt }) {
   const daysLeft = Math.ceil((new Date(expiresAt) - new Date()) / 86400000);
   const color = daysLeft > 7 ? C.green : daysLeft > 3 ? C.orange : C.red;
@@ -41,6 +53,7 @@ function AdStatusBadge({ expiresAt }) {
     </div>
   );
 }
+
 function DeleteAccountButton({ userId }) {
   const [confirm1, setConfirm1] = useState(false);
   const [confirm2, setConfirm2] = useState(false);
@@ -95,6 +108,7 @@ function DeleteAccountButton({ userId }) {
     </div>
   );
 }
+
 function ProfileEdit({ user, profile, setProfile }) {
   const [phone, setPhone] = useState(profile?.phone || "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -203,11 +217,7 @@ export default function PanelPracownika() {
   const [editingId, setEditingId] = useState(null);
   const router = useRouter();
 
-  const [form, setForm] = useState({
-    cat:"", role:"", exp:"", rateFrom:"", rateTo:"",
-    region:"", city:"", avail:"", contract:[], remote:false,
-    skills:"", desc:"",
-  });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [formStep, setFormStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -270,6 +280,7 @@ export default function PanelPracownika() {
       exp: ad.experience || "",
       rateFrom: ad.rate_from || "",
       rateTo: ad.rate_to || "",
+      rateType: ad.rate_type || "hourly",
       region: ad.region || "",
       city: ad.city || "",
       avail: ad.available || "",
@@ -301,6 +312,7 @@ export default function PanelPracownika() {
       experience: form.exp,
       rate_from: parseInt(form.rateFrom) || null,
       rate_to: parseInt(form.rateTo) || null,
+      rate_type: form.rateType,
       skills: skillsArray,
       description: form.desc,
       contract: form.contract,
@@ -325,7 +337,7 @@ export default function PanelPracownika() {
       setSaved(true);
       setEditingId(null);
       setView("myads");
-      setForm({ cat:"", role:"", exp:"", rateFrom:"", rateTo:"", region:"", city:"", avail:"", contract:[], remote:false, skills:"", desc:"" });
+      setForm({ ...EMPTY_FORM });
       setFormStep(1);
     }
     setSaving(false);
@@ -417,7 +429,7 @@ export default function PanelPracownika() {
                 </div>
                 <div style={{ textAlign:"right" }}>
                   <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
-                    {form.rateFrom}{form.rateTo ? `–${form.rateTo}` : ""} zł/h netto (na rękę)
+                    {form.rateFrom}{form.rateTo ? `–${form.rateTo}` : ""} {form.rateType==="monthly" ? "zł/mies." : "zł/h"} netto (na rękę)
                   </div>
                   {form.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
                 </div>
@@ -465,7 +477,7 @@ export default function PanelPracownika() {
         {/* TABS */}
         <div style={{ display:"flex", gap:8, marginBottom:28, flexWrap:"wrap" }}>
           {[["myads","📋 Moje ogłoszenia"],["addad", editingId?"✏️ Edytuj ogłoszenie":"➕ Dodaj ogłoszenie"],["stats","📈 Statystyki"],["profile","👤 Profil"]].map(([id,label])=>(
-            <button key={id} onClick={()=>{setView(id);setSaved(false);if(id!=="addad"){setEditingId(null);setForm({cat:"",role:"",exp:"",rateFrom:"",rateTo:"",region:"",city:"",avail:"",contract:[],remote:false,skills:"",desc:""});setFormStep(1);}}} style={{
+            <button key={id} onClick={()=>{setView(id);setSaved(false);if(id!=="addad"){setEditingId(null);setForm({ ...EMPTY_FORM });setFormStep(1);}}} style={{
               padding:"9px 18px", borderRadius:10, border:`1.5px solid ${view===id?C.blue:C.g200}`,
               background:view===id?C.blue:C.white, color:view===id?"#fff":C.g600,
               fontSize:13, fontWeight:600, cursor:"pointer",
@@ -513,7 +525,7 @@ export default function PanelPracownika() {
                   <div key={ad.id} style={{ background:C.white, borderRadius:12, padding:"16px 20px", border:`1px solid ${C.g100}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
                       <div style={{ fontWeight:700, fontSize:14, color:C.g800 }}>{ad.role}</div>
-                      <div style={{ fontSize:12, color:C.g400, marginTop:2 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`}</div>
+                      <div style={{ fontSize:12, color:C.g400, marginTop:2 }}>{ad.city}, {ad.region} · {rateLabel(ad)}</div>
                     </div>
                     <AdStatusBadge expiresAt={ad.expires_at} />
                   </div>
@@ -585,12 +597,20 @@ export default function PanelPracownika() {
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Stawka od (zł/h)</label>
-                    <input type="number" placeholder="np. 30" value={form.rateFrom} onChange={e=>up("rateFrom",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
+                    <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Typ stawki</label>
+                    <select value={form.rateType} onChange={e=>up("rateType",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }}>
+                      <option value="hourly">Stawka godzinowa (zł/h)</option>
+                      <option value="monthly">Stawka miesięczna (zł/mies.)</option>
+                    </select>
+                  </div>
+                  <div />
+                  <div>
+                    <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Stawka od ({form.rateType==="monthly"?"zł/mies.":"zł/h"})</label>
+                    <input type="number" placeholder={form.rateType==="monthly"?"np. 5000":"np. 30"} value={form.rateFrom} onChange={e=>up("rateFrom",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
                   </div>
                   <div>
-                    <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Stawka do (zł/h)</label>
-                    <input type="number" placeholder="np. 50" value={form.rateTo} onChange={e=>up("rateTo",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
+                    <label style={{ fontSize:11, fontWeight:700, color:C.g600, display:"block", marginBottom:5, textTransform:"uppercase", letterSpacing:0.5 }}>Stawka do ({form.rateType==="monthly"?"zł/mies.":"zł/h"})</label>
+                    <input type="number" placeholder={form.rateType==="monthly"?"np. 7000":"np. 50"} value={form.rateTo} onChange={e=>up("rateTo",e.target.value)} style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:C.g800 }} />
                   </div>
                 </div>
                 <div style={{ marginBottom:14 }}>
@@ -663,7 +683,7 @@ export default function PanelPracownika() {
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
               <h2 style={{ fontFamily:"Sora,sans-serif", fontSize:20, fontWeight:800, color:C.g800 }}>Moje ogłoszenia</h2>
-              <button onClick={()=>{ setEditingId(null); setForm({cat:"",role:"",exp:"",rateFrom:"",rateTo:"",region:"",city:"",avail:"",contract:[],remote:false,skills:"",desc:""}); setFormStep(1); setView("addad"); }} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"9px 18px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>+ Nowe</button>
+              <button onClick={()=>{ setEditingId(null); setForm({ ...EMPTY_FORM }); setFormStep(1); setView("addad"); }} style={{ background:`linear-gradient(135deg,${C.blue},${C.navy})`, color:"#fff", border:"none", padding:"9px 18px", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer" }}>+ Nowe</button>
             </div>
             {ads.length === 0 ? (
               <div style={{ textAlign:"center", padding:"60px 20px", color:C.g400 }}>
@@ -677,7 +697,7 @@ export default function PanelPracownika() {
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
                       <div>
                         <div style={{ fontFamily:"Sora,sans-serif", fontWeight:700, fontSize:15, color:C.g800, marginBottom:2 }}>{ad.role}</div>
-                        <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {ad.rate_from && `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ''} zł/h`} · 👁 {ad.views || 0} wyświetleń</div>
+                        <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region} · {rateLabel(ad)} · 👁 {ad.views || 0} wyświetleń</div>
                       </div>
                       <AdStatusBadge expiresAt={ad.expires_at} />
                     </div>
