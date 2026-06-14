@@ -426,8 +426,8 @@ export default function PanelPracodawcy() {
                 </select>
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:10, marginBottom:12, alignItems:"center" }}>
-                <input type="number" placeholder="Stawka od (zł/h)" value={rateMin} onChange={e=>{ setRateMin(e.target.value); setPage(0); }} style={inputStyle} />
-                <input type="number" placeholder="Stawka do (zł/h)" value={rateMax} onChange={e=>{ setRateMax(e.target.value); setPage(0); }} style={inputStyle} />
+                <input type="number" placeholder="Stawka od" value={rateMin} onChange={e=>{ setRateMin(e.target.value); setPage(0); }} style={inputStyle} />
+                <input type="number" placeholder="Stawka do" value={rateMax} onChange={e=>{ setRateMax(e.target.value); setPage(0); }} style={inputStyle} />
                 <button onClick={()=>{ setSearch(""); setRegion("Cała Polska"); setCat("all"); setRole("all"); setSortBy("newest"); setRateMin(""); setRateMax(""); setCity(""); setPage(0); }} style={{ padding:"9px 14px", borderRadius:8, border:`1.5px solid ${C.g200}`, background:C.white, fontSize:12, fontWeight:600, cursor:"pointer", color:C.g600, whiteSpace:"nowrap" }}>
                   🔄 Resetuj filtry
                 </button>

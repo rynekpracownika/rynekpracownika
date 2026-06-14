@@ -469,8 +469,8 @@ function AdsView({ ads: realAds=[], initialCat="all" }) {
             </select>
           </div>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-            <input type="number" placeholder="Stawka od (zł/h)" value={rateMin} onChange={e=>setRateMin(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }} />
-            <input type="number" placeholder="Stawka do (zł/h)" value={rateMax} onChange={e=>setRateMax(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }} />
+            <input type="number" placeholder="Stawka od" value={rateMin} onChange={e=>setRateMin(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }} />
+            <input type="number" placeholder="Stawka do" value={rateMax} onChange={e=>setRateMax(e.target.value)} style={{ flex:1, minWidth:140, padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:13, background:C.bg, outline:"none", color:"#1E293B" }} />
             <label style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer", fontSize:13, fontWeight:500 }}>
               <input type="checkbox" checked={remoteOnly} onChange={e=>setRemoteOnly(e.target.checked)} style={{ accentColor:C.blue, width:15, height:15 }} />
               Tylko zdalne
