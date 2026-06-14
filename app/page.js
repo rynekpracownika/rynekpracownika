@@ -372,7 +372,8 @@ const ROLES = {
   edukacja:   ["Nauczyciel","Korepetytor","Trener","Coach"],
 };
 
-function AdsView({ ads: realAds=[], initialCat="all" }) {
+function AdsView({ ads: realAds, initialCat="all" }) {
+  const safeAds = realAds || [];
   const [search, setSearch] = useState("");
   const [region, setRegion] = useState("Cała Polska");
   const [catFilter, setCatFilter] = useState(initialCat);
@@ -395,7 +396,7 @@ function AdsView({ ads: realAds=[], initialCat="all" }) {
 
   const hasFilters = search || region !== "Cała Polska" || catFilter !== "all" || roleFilter !== "all" || remoteOnly || rateMin || rateMax || city;
 
-  const filtered = realAds.filter(a=>{
+  const filtered = safeAds.filter(a=>{
     const q = search.toLowerCase();
     const min = rateMin ? parseInt(rateMin) : null;
     const max = rateMax ? parseInt(rateMax) : null;
@@ -917,6 +918,12 @@ function ReportModal({ ad, onClose, user }) {
 
 export default function App() {
   const [view, setView] = useState("home");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("view");
+    if (v === "ads") setView("ads");
+  }, []);
   const [realAds, setRealAds] = useState(null);
   const [activeCat, setActiveCat] = useState("all");
   const [adsCount, setAdsCount] = useState(0);
