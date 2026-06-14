@@ -47,6 +47,11 @@ const STATUSES = [
   { id:"rejected", label:"❌ Odrzucony", color:"#DC2626" },
 ];
 
+function rateLabel(ad) {
+  const unit = ad.rate_type === "monthly" ? "zł/mies." : "zł/h";
+  return `${ad.rate_from}${ad.rate_to ? `–${ad.rate_to}` : ""} ${unit} netto (na rękę)`;
+}
+
 function DeleteAccountButton({ userId }) {
   const [confirm1, setConfirm1] = useState(false);
   const [confirm2, setConfirm2] = useState(false);
@@ -452,7 +457,7 @@ export default function PanelPracodawcy() {
                           </button>
                           <div style={{ textAlign:"right" }}>
                             <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
-                              {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)
+                              {rateLabel(ad)}
                             </div>
                             {ad.remote && <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>🏠 Zdalnie</div>}
                           </div>
@@ -518,7 +523,7 @@ export default function PanelPracodawcy() {
                         <div style={{ fontSize:12, color:C.g400 }}>{ad.city}, {ad.region}</div>
                       </div>
                       <div style={{ textAlign:"right" }}>
-                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)</div>
+                        <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{rateLabel(ad)}</div>
                         <div style={{ fontSize:11, color:C.g400 }}>{ad.experience} dośw.</div>
                       </div>
                     </div>
@@ -588,7 +593,7 @@ export default function PanelPracodawcy() {
                         <button onClick={()=>toggleFavorite(ad.id)} style={{ background:"transparent", border:"none", cursor:"pointer", fontSize:20, padding:4 }}>⭐</button>
                         <div style={{ textAlign:"right" }}>
                           <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:15, color:C.navy }}>
-                            {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ''} zł/h netto (na rękę)
+                            {rateLabel(ad)}
                           </div>
                         </div>
                       </div>

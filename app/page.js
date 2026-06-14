@@ -333,7 +333,7 @@ function AdCard({ ad, preview, onUnlock, onReport }) {
         </div>
         <div style={{ textAlign:"right", flexShrink:0 }}>
           <div style={{ fontFamily:"Sora,sans-serif", fontWeight:800, fontSize:14, color:C.navy }}>{ad.rate || (ad.rate_from && `${ad.rate_from}${ad.rate_to?`–${ad.rate_to}`:""}`)}</div>
-          <div style={{ fontSize:10, color:C.g400 }}>zł/h netto (na rękę)</div>
+          <div style={{ fontSize:10, color:C.g400 }}>{ad.rate_type === "monthly" ? "zł/mies. netto (na rękę)" : "zł/h netto (na rękę)"}</div>
         </div>
       </div>
       {!preview && <p style={{ fontSize:12, color:C.g600, lineHeight:1.6, marginBottom:12, borderTop:`1px solid ${C.g100}`, paddingTop:10 }}>{ad.desc || ad.description}</p>}
