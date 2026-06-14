@@ -77,7 +77,7 @@ export default function OgloszeniePage({ params }) {
             <div style={{ background:C.blue+"0a", border:`1px solid ${C.blue}20`, borderRadius:12, padding:"16px 20px", marginBottom:20 }}>
               <div style={{ fontSize:12, color:C.g400, marginBottom:4, textTransform:"uppercase", letterSpacing:0.5, fontWeight:600 }}>Oczekiwana stawka</div>
               <div style={{ fontSize:24, fontWeight:800, color:C.blue, fontFamily:"Sora,sans-serif" }}>
-                {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ""} zł/h
+                {ad.rate_from}{ad.rate_to ? `–${ad.rate_to}` : ""} {ad.rate_type === "monthly" ? "zł/mies." : "zł/h"}
               </div>
             </div>
           )}
