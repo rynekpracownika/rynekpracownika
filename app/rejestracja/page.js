@@ -131,6 +131,16 @@ function RejestracjaForm() {
       ({ data, error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
+        options: {
+          data: {
+            type: type,
+            name: form.name,
+            phone: form.phone,
+            nip: type === "employer" ? nip.replace(/[-\s]/g, "") : null,
+            company_name: type === "employer" ? companyData?.name : null,
+            verified: type === "employer" ? nipStatus === "valid" : false,
+          },
+        },
       }));
     } catch {
       setError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.");
@@ -142,25 +152,6 @@ function RejestracjaForm() {
       setError(authError.message);
       setLoading(false);
       return;
-    }
-
-    if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: data.user.id,
-        type: type,
-        name: form.name,
-        phone: form.phone,
-        email: form.email,
-        nip: type === "employer" ? nip.replace(/[-\s]/g, "") : null,
-        company_name: type === "employer" ? companyData?.name : null,
-        verified: type === "employer" ? nipStatus === "valid" : false,
-      });
-
-      if (profileError) {
-        setError("Błąd zapisu profilu: " + profileError.message);
-        setLoading(false);
-        return;
-      }
     }
 
     await fetch("/api/email", {
